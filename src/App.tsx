@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import LoginPage from "./pages/LoginPage"
 import Home from "./pages/home"
 import Dashboard from "./pages/Dashboard"
+import TaskBoard from "./pages/TaskBoard" // Import TaskBoard
 import SignUpPage from "./pages/SignUpPage"
 import ErrorBoundary from "./components/forms/common/ErrorBoundary"
 import ProtectedRoute from "./components/forms/common/protected-route"
@@ -18,7 +19,6 @@ function App() {
       <Router>
         <ErrorBoundary>
           <UserProvider>
-            {" "}
             {/* Wrap with UserProvider */}
             <WorkspaceProvider>
               <Routes>
@@ -30,6 +30,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/taskboards"
+                  element={
+                    <ProtectedRoute>
+                      <TaskBoard /> {/* TaskBoard component */}
                     </ProtectedRoute>
                   }
                 />

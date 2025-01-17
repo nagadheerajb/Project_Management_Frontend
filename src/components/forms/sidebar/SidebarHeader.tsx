@@ -9,9 +9,9 @@ const SidebarHeader: React.FC = () => {
   const toggleSidebar = () => setOpen(!open)
 
   return (
-    <div className="p-4 flex items-center justify-between border-b bg-white">
+    <div className="p-4 flex items-center justify-between border-b">
       {open && <h2 className="font-semibold text-lg">Workspaces</h2>}
-      <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+      <Button variant="ghost" size="icon" onClick={toggleSidebar} className="ml-auto">
         {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </Button>
     </div>

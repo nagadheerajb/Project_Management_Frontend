@@ -39,3 +39,39 @@ export interface UserReadDTO {
   createdDate: string
   profileImage: string | null
 }
+
+// Project Data
+export interface Project {
+  id: string
+  name: string
+  description?: string
+  createdDate: string
+  startDate: string
+  endDate?: string
+  createdByUserId: string
+  workspaceId: string
+  status: boolean
+}
+
+// Task Interfaces
+export interface Task {
+  id?: string
+  name: string
+  description: string
+  createdDate?: string
+  resolvedDate?: string
+  dueDate?: string
+  attachments?: string[]
+  taskStatus: "TODO" | "IN_DEVELOPMENT" | "COMPLETE" | "RELEASED"
+  projectId: string
+  createdUserId: string
+  assignedUserId: string
+  priority: "LOW_PRIORITY" | "MEDIUM_PRIORITY" | "HIGH_PRIORITY"
+}
+
+export interface TaskResponse {
+  data: Task | Task[]
+  status: string
+  code: number
+  errors: any[]
+}
