@@ -23,46 +23,41 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   onDelete,
   projectId
 }) => {
-  const [isEditMode, setIsEditMode] = useState(!task?.id)
+  console.log("TaskDialog render:", { isOpen, task })
+  const [isEditMode, setIsEditMode] = useState(false)
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
-  const [localTask, setLocalTask] = useState<Task>(
-    task || {
-      name: "",
-      description: "",
-      taskStatus: "TODO",
-      projectId,
-      createdUserId: "",
-      assignedUserId: "",
-      priority: "MEDIUM_PRIORITY",
-      attachments: [],
-      dueDate: undefined,
-      resolvedDate: undefined
-    }
-  )
+  const [localTask, setLocalTask] = useState<Task | null>(null)
 
   useEffect(() => {
-    setLocalTask(
-      task || {
-        name: "",
-        description: "",
-        taskStatus: "TODO",
-        projectId,
-        createdUserId: "",
-        assignedUserId: "",
-        priority: "MEDIUM_PRIORITY",
-        attachments: [],
-        dueDate: undefined,
-        resolvedDate: undefined
-      }
-    )
-    setIsEditMode(!task?.id)
-  }, [task, projectId])
+    console.log("TaskDialog useEffect:", { isOpen, task })
+    if (isOpen) {
+      setLocalTask(
+        task || {
+          name: "",
+          description: "",
+          taskStatus: "TODO",
+          projectId,
+          createdUserId: "",
+          assignedUserId: "",
+          priority: "MEDIUM_PRIORITY",
+          attachments: [],
+          dueDate: undefined,
+          resolvedDate: undefined
+        }
+      )
+      setIsEditMode(!task?.id)
+    } else {
+      setLocalTask(null)
+      setIsEditMode(false)
+    }
+  }, [isOpen, task, projectId])
 
   const handleEditToggle = () => setIsEditMode((prev) => !prev)
 
   const handleUpdate = (updatedTask: Task) => {
-    console.log("Updating task:", updatedTask)
+    console.log("TaskDialog: Updating task:", updatedTask)
     onUpdate(updatedTask)
+    setIsEditMode(false)
   }
 
   return (
@@ -71,53 +66,53 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
         <DialogHeader>
           <DialogTitle>
             {isEditMode
-              ? task?.id
+              ? localTask?.id
                 ? "Edit Task"
                 : "Create Task"
-              : `Task Details: ${task?.name || "New Task"}`}
+              : `Task Details: ${localTask?.name || "New Task"}`}
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[80vh]">
           <div className="space-y-4 p-4">
-            {isEditMode ? (
+            {isEditMode && localTask ? (
               <TaskForm
                 formData={localTask}
                 onSave={handleUpdate}
                 isPending={false}
                 onCancel={() => {
-                  if (!task?.id) {
+                  if (!localTask.id) {
                     onClose()
                   } else {
                     setIsEditMode(false)
                   }
                 }}
               />
-            ) : (
+            ) : localTask ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>{task?.name || "New Task"}</CardTitle>
+                  <CardTitle>{localTask.name || "New Task"}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p>
-                    <strong>Description:</strong> {task?.description || "No description"}
+                    <strong>Description:</strong> {localTask.description || "No description"}
                   </p>
                   <p>
-                    <strong>Status:</strong> {task?.taskStatus || "Not set"}
+                    <strong>Status:</strong> {localTask.taskStatus || "Not set"}
                   </p>
                   <p>
-                    <strong>Priority:</strong> {task?.priority || "Not set"}
+                    <strong>Priority:</strong> {localTask.priority || "Not set"}
                   </p>
                   <p>
-                    <strong>Assigned To:</strong> {task?.assignedUserId || "Not assigned"}
+                    <strong>Assigned To:</strong> {localTask.assignedUserId || "Not assigned"}
                   </p>
                   <p>
-                    <strong>Due Date:</strong> {task?.dueDate || "Not set"}
+                    <strong>Due Date:</strong> {localTask.dueDate || "Not set"}
                   </p>
-                  {task?.attachments?.length ? (
+                  {localTask.attachments?.length ? (
                     <div>
                       <strong>Attachments:</strong>
                       <ul>
-                        {task.attachments.map((attachment, index) => (
+                        {localTask.attachments.map((attachment, index) => (
                           <li key={index}>
                             <a href={attachment} target="_blank" rel="noopener noreferrer">
                               {attachment}
@@ -131,14 +126,14 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   )}
                 </CardContent>
               </Card>
-            )}
+            ) : null}
 
-            {!isEditMode && (
+            {!isEditMode && localTask && (
               <div className="flex justify-end space-x-2">
                 <Button variant="secondary" onClick={handleEditToggle}>
                   Edit
                 </Button>
-                {task?.id && (
+                {localTask.id && (
                   <Button variant="destructive" onClick={() => setShowDeleteConfirmation(true)}>
                     Delete
                   </Button>
@@ -148,13 +143,13 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
           </div>
         </ScrollArea>
       </DialogContent>
-      {showDeleteConfirmation && task?.id && (
+      {showDeleteConfirmation && localTask?.id && (
         <Dialog open onOpenChange={() => setShowDeleteConfirmation(false)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Delete Task</DialogTitle>
             </DialogHeader>
-            <p>Are you sure you want to delete the task "{task.name}"?</p>
+            <p>Are you sure you want to delete the task "{localTask.name}"?</p>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setShowDeleteConfirmation(false)}>
                 Cancel
@@ -162,7 +157,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
               <Button
                 variant="destructive"
                 onClick={() => {
-                  onDelete(task.id!)
+                  onDelete(localTask.id!)
                   setShowDeleteConfirmation(false)
                   onClose()
                 }}

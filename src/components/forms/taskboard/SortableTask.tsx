@@ -3,14 +3,28 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Task } from "@/types/interfaces"
 
-const SortableTask: React.FC<{ id: string; task: Task }> = ({ id, task }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+interface SortableTaskProps {
+  id: string
+  task: Task
+  onTaskClick: (task: Task) => void
+}
+
+const SortableTask: React.FC<SortableTaskProps> = ({ id, task, onTaskClick }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id
   })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition
+    transition,
+    opacity: isDragging ? 0.5 : 1
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log("SortableTask: Task clicked", task)
+    onTaskClick(task)
   }
 
   return (
@@ -20,6 +34,12 @@ const SortableTask: React.FC<{ id: string; task: Task }> = ({ id, task }) => {
       {...attributes}
       {...listeners}
       className="p-2 bg-white rounded shadow cursor-pointer"
+      onClick={handleClick}
+      onMouseDown={(e) => {
+        if (e.button === 0) {
+          e.stopPropagation()
+        }
+      }}
     >
       <h4 className="font-bold">{task.name}</h4>
       <p className="text-sm text-gray-500">{task.description}</p>

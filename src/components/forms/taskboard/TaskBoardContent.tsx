@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useCallback, useEffect } from "react"
 import {
   DndContext,
   DragOverlay,
@@ -6,7 +6,9 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
-  KeyboardSensor
+  KeyboardSensor,
+  DragStartEvent,
+  DragEndEvent
 } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import SortableTask from "./SortableTask"
@@ -29,10 +31,19 @@ const TaskBoardContent: React.FC<TaskBoardContentProps> = ({ tasks, projectId })
     { key: "RELEASED", title: "RELEASED" }
   ]
 
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor))
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8
+      }
+    }),
+    useSensor(KeyboardSensor)
+  )
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [dialogTask, setDialogTask] = useState<Task | null>(null)
+  const [dialogState, setDialogState] = useState<{ isOpen: boolean; task: Task | null }>({
+    isOpen: false,
+    task: null
+  })
 
   const { createTaskMutation, updateTaskMutation, deleteTaskMutation } = useTaskMutations()
   const { userUUID } = useUser()
@@ -42,62 +53,84 @@ const TaskBoardContent: React.FC<TaskBoardContentProps> = ({ tasks, projectId })
     return acc
   }, {} as Record<string, Task[]>)
 
-  const openTaskDialog = (task: Task | null) => {
-    console.log("Opening task dialog:", task)
-    setDialogTask(task)
-    setIsDialogOpen(true)
-  }
+  const openTaskDialog = useCallback((task: Task | null) => {
+    console.log("TaskBoardContent: Opening task dialog:", task)
+    setDialogState({ isOpen: true, task })
+  }, [])
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false)
-    setDialogTask(null)
-  }
+  const handleDialogClose = useCallback(() => {
+    console.log("TaskBoardContent: Closing task dialog")
+    setDialogState({ isOpen: false, task: null })
+  }, [])
 
-  const handleTaskUpdate = (updatedTask: Task) => {
-    console.log("Handling task update:", updatedTask)
-    if (!updatedTask.id) {
-      console.log("Creating new task")
-      createTaskMutation.mutate(
-        { ...updatedTask, createdUserId: userUUID || "" },
-        {
-          onSuccess: () => {
-            console.log("Task created successfully")
-            setIsDialogOpen(false)
-          },
-          onError: (error) => {
-            console.error("Error creating task:", error)
+  const handleTaskUpdate = useCallback(
+    (updatedTask: Task) => {
+      console.log("TaskBoardContent: Handling task update:", updatedTask)
+      if (!updatedTask.id) {
+        console.log("Creating new task")
+        createTaskMutation.mutate(
+          { ...updatedTask, createdUserId: userUUID || "" },
+          {
+            onSuccess: () => {
+              console.log("Task created successfully")
+              handleDialogClose()
+            },
+            onError: (error) => {
+              console.error("Error creating task:", error)
+            }
           }
-        }
-      )
-    } else {
-      console.log("Updating existing task")
-      updateTaskMutation.mutate(
-        { id: updatedTask.id, updates: updatedTask },
-        {
-          onSuccess: () => {
-            console.log("Task updated successfully")
-            setIsDialogOpen(false)
-          },
-          onError: (error) => {
-            console.error("Error updating task:", error)
+        )
+      } else {
+        console.log("Updating existing task")
+        updateTaskMutation.mutate(
+          { id: updatedTask.id, updates: updatedTask },
+          {
+            onSuccess: () => {
+              console.log("Task updated successfully")
+              handleDialogClose()
+            },
+            onError: (error) => {
+              console.error("Error updating task:", error)
+            }
           }
-        }
-      )
-    }
-  }
-
-  const handleTaskDelete = (taskId: string) => {
-    console.log("Handling task delete:", taskId)
-    deleteTaskMutation.mutate(taskId, {
-      onSuccess: () => {
-        console.log("Task deleted successfully")
-        setIsDialogOpen(false)
-      },
-      onError: (error) => {
-        console.error("Error deleting task:", error)
+        )
       }
-    })
+    },
+    [createTaskMutation, updateTaskMutation, userUUID, handleDialogClose]
+  )
+
+  const handleTaskDelete = useCallback(
+    (taskId: string) => {
+      console.log("TaskBoardContent: Handling task delete:", taskId)
+      deleteTaskMutation.mutate(taskId, {
+        onSuccess: () => {
+          console.log("Task deleted successfully")
+          handleDialogClose()
+        },
+        onError: (error) => {
+          console.error("Error deleting task:", error)
+        }
+      })
+    },
+    [deleteTaskMutation, handleDialogClose]
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    console.log("Drag started:", event)
+    setActiveId(event.active.id as string)
   }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    console.log("Drag ended:", event)
+    setActiveId(null)
+    // Implement drag end logic here if needed
+  }
+
+  useEffect(() => {
+    console.log("TaskBoardContent: Dialog state changed:", dialogState)
+  }, [dialogState])
+
+  console.log("TaskBoardContent render:", dialogState)
 
   return (
     <div className="flex flex-col space-y-4 p-4">
@@ -110,8 +143,8 @@ const TaskBoardContent: React.FC<TaskBoardContentProps> = ({ tasks, projectId })
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={(event) => setActiveId(event.active.id as string)}
-        onDragEnd={() => setActiveId(null)}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
       >
         <div className="grid grid-cols-4 gap-4">
           {columns.map(({ key, title }) => (
@@ -123,13 +156,14 @@ const TaskBoardContent: React.FC<TaskBoardContentProps> = ({ tasks, projectId })
               >
                 <div className="space-y-2">
                   {groupedTasks[key]?.length ? (
-                    groupedTasks[key].map((task) =>
-                      task.id ? (
-                        <div key={task.id} onClick={() => openTaskDialog(task)}>
-                          <SortableTask id={task.id} task={task} />
-                        </div>
-                      ) : null
-                    )
+                    groupedTasks[key].map((task) => (
+                      <SortableTask
+                        key={task.id}
+                        id={task.id || ""}
+                        task={task}
+                        onTaskClick={openTaskDialog}
+                      />
+                    ))
                   ) : (
                     <p className="text-sm text-gray-400">No tasks</p>
                   )}
@@ -139,27 +173,25 @@ const TaskBoardContent: React.FC<TaskBoardContentProps> = ({ tasks, projectId })
           ))}
         </div>
         <DragOverlay>
-          {activeId
-            ? (() => {
-                const activeTask = tasks.find((t) => t.id === activeId)
-                return activeTask && activeTask.id ? (
-                  <SortableTask id={activeTask.id} task={activeTask} />
-                ) : null
-              })()
-            : null}
+          {activeId ? (
+            <SortableTask
+              id={activeId}
+              task={tasks.find((t) => t.id === activeId) || tasks[0]}
+              onTaskClick={() => {}}
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
 
-      {isDialogOpen && (
-        <TaskDialog
-          task={dialogTask}
-          isOpen={isDialogOpen}
-          onClose={handleDialogClose}
-          onUpdate={handleTaskUpdate}
-          onDelete={handleTaskDelete}
-          projectId={projectId}
-        />
-      )}
+      <TaskDialog
+        key={dialogState.task ? dialogState.task.id : "new-task"}
+        task={dialogState.task}
+        isOpen={dialogState.isOpen}
+        onClose={handleDialogClose}
+        onUpdate={handleTaskUpdate}
+        onDelete={handleTaskDelete}
+        projectId={projectId}
+      />
     </div>
   )
 }
