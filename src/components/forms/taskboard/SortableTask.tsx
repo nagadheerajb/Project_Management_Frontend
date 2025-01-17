@@ -11,7 +11,11 @@ interface SortableTaskProps {
 
 const SortableTask: React.FC<SortableTaskProps> = ({ id, task, onTaskClick }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id
+    id: id,
+    data: {
+      type: "task",
+      task
+    }
   })
 
   const style = {
@@ -35,11 +39,6 @@ const SortableTask: React.FC<SortableTaskProps> = ({ id, task, onTaskClick }) =>
       {...listeners}
       className="p-2 bg-white rounded shadow cursor-pointer"
       onClick={handleClick}
-      onMouseDown={(e) => {
-        if (e.button === 0) {
-          e.stopPropagation()
-        }
-      }}
     >
       <h4 className="font-bold">{task.name}</h4>
       <p className="text-sm text-gray-500">{task.description}</p>

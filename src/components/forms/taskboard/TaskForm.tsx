@@ -1,7 +1,8 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Task } from "@/types/interfaces"
+import { formatDate } from "@/utils/format-date"
 
 interface TaskFormProps {
   formData: Task
@@ -13,6 +14,11 @@ interface TaskFormProps {
 const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPending }) => {
   const [localFormData, setLocalFormData] = useState<Task>(formData)
 
+  useEffect(() => {
+    // Update localFormData when formData prop changes
+    setLocalFormData(formData)
+  }, [formData])
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -20,11 +26,20 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
     setLocalFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleAttachmentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
     setLocalFormData((prev) => ({
       ...prev,
-      attachments: value ? value.split(",").map((a) => a.trim()) : []
+      [name]: value ? formatDate(value) : undefined // Format date using the utility
+    }))
+  }
+
+  const handleAttachmentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const attachments = value ? value.split(",").map((a) => a.trim()) : []
+    setLocalFormData((prev) => ({
+      ...prev,
+      attachments: attachments
     }))
   }
 
@@ -98,7 +113,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
           name="dueDate"
           type="date"
           value={localFormData.dueDate || ""}
-          onChange={handleInputChange}
+          onChange={handleDateChange}
           placeholder="Due Date"
         />
       </div>
@@ -109,7 +124,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
           name="resolvedDate"
           type="date"
           value={localFormData.resolvedDate || ""}
-          onChange={handleInputChange}
+          onChange={handleDateChange}
           placeholder="Resolved Date"
         />
       </div>

@@ -5,6 +5,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import TaskForm from "./TaskForm"
 import { Task } from "@/types/interfaces"
+import { formatDate } from "@/utils/format-date" // Ensure this utility is available
 
 interface TaskDialogProps {
   task: Task | null
@@ -32,18 +33,26 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
     console.log("TaskDialog useEffect:", { isOpen, task })
     if (isOpen) {
       setLocalTask(
-        task || {
-          name: "",
-          description: "",
-          taskStatus: "TODO",
-          projectId,
-          createdUserId: "",
-          assignedUserId: "",
-          priority: "MEDIUM_PRIORITY",
-          attachments: [],
-          dueDate: undefined,
-          resolvedDate: undefined
-        }
+        task
+          ? {
+              ...task,
+              dueDate: task.dueDate ? formatDate(task.dueDate) : undefined, // Convert to YYYY-MM-DD
+              resolvedDate: task.resolvedDate ? formatDate(task.resolvedDate) : undefined, // Convert
+              createdDate: task.createdDate ? formatDate(task.createdDate) : undefined // Convert
+            }
+          : {
+              name: "",
+              description: "",
+              taskStatus: "TODO",
+              projectId,
+              createdUserId: "",
+              assignedUserId: "",
+              priority: "MEDIUM_PRIORITY",
+              attachments: [],
+              dueDate: undefined,
+              resolvedDate: undefined,
+              createdDate: formatDate(new Date().toISOString()) // Format new date
+            }
       )
       setIsEditMode(!task?.id)
     } else {
@@ -106,23 +115,40 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                     <strong>Assigned To:</strong> {localTask.assignedUserId || "Not assigned"}
                   </p>
                   <p>
-                    <strong>Due Date:</strong> {localTask.dueDate || "Not set"}
+                    <strong>Due Date:</strong>{" "}
+                    {localTask.dueDate
+                      ? new Date(localTask.dueDate).toLocaleDateString()
+                      : "Not set"}
                   </p>
-                  {localTask.attachments?.length ? (
+                  <p>
+                    <strong>Created Date:</strong>{" "}
+                    {localTask.createdDate
+                      ? new Date(localTask.createdDate).toLocaleDateString()
+                      : "Not set"}
+                  </p>
+                  <p>
+                    <strong>Resolved Date:</strong>{" "}
+                    {localTask.resolvedDate
+                      ? new Date(localTask.resolvedDate).toLocaleDateString()
+                      : "Not set"}
+                  </p>
+                  {localTask.attachments && localTask.attachments.length > 0 ? (
                     <div>
                       <strong>Attachments:</strong>
                       <ul>
-                        {localTask.attachments.map((attachment, index) => (
+                        {localTask.attachments.map((attachments, index) => (
                           <li key={index}>
-                            <a href={attachment} target="_blank" rel="noopener noreferrer">
-                              {attachment}
+                            <a href={attachments} target="_blank" rel="noopener noreferrer">
+                              {attachments}
                             </a>
                           </li>
                         ))}
                       </ul>
                     </div>
                   ) : (
-                    <p>No attachments</p>
+                    <p>
+                      <strong>Attachments:</strong> No attachments
+                    </p>
                   )}
                 </CardContent>
               </Card>
