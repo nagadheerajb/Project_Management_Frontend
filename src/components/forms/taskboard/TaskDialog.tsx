@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import TaskForm from "./TaskForm"
 import { Task } from "@/types/interfaces"
 import { formatDate } from "@/utils/format-date" // Ensure this utility is available
+import Comments from "@/components/forms/taskboard/Comments"
 
 interface TaskDialogProps {
   task: Task | null
@@ -153,6 +154,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 </CardContent>
               </Card>
             ) : null}
+
+            {!isEditMode && localTask && localTask.id && <Comments taskId={localTask.id} />}
 
             {!isEditMode && localTask && (
               <div className="flex justify-end space-x-2">
