@@ -1,30 +1,44 @@
-import React, { useEffect } from "react"
+import type React from "react"
+import { useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useForm, Controller } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CompanyData, WorkspaceData, Project } from "@/types/interfaces"
+import type {
+  CompanyData,
+  WorkspaceData,
+  Project,
+  Permission,
+  Role,
+  RolePermission
+} from "@/types/interfaces"
 import { useUser } from "@/context/user-context"
 
 type FormData = CompanyData &
   Partial<WorkspaceData> &
-  Partial<Project> & {
-    createdBy: string
-    projectId: string
-    workspaceId: string
+  Partial<Project> &
+  Partial<Permission> &
+  Partial<Role> &
+  Partial<RolePermission> & {
+    id?: string
+    createdBy?: string
+    projectId?: string
+    workspaceId?: string
   }
 
 const ModalForm: React.FC<{
-  type: "company" | "workspace" | "project"
+  type: "company" | "workspace" | "project" | "permission" | "role" | "rolePermission"
   defaultValues?: FormData
-  onSubmit: (data: FormData) => void
+  onSubmit: (data: Partial<Role> | FormData) => void
   isOpen: boolean
   onClose: () => void
   isPending: boolean
   label: string
   selectedCompanyId?: string | null
   error: string | null
+  roles: Role[]
+  permissions: Permission[]
 }> = ({
   type,
   defaultValues,
@@ -34,7 +48,9 @@ const ModalForm: React.FC<{
   isPending,
   label,
   selectedCompanyId,
-  error
+  error,
+  roles = [],
+  permissions = []
 }) => {
   const { userUUID } = useUser()
   const {
@@ -42,29 +58,53 @@ const ModalForm: React.FC<{
     handleSubmit,
     reset,
     control,
-    formState: { errors }
+    formState: { errors },
+    watch
   } = useForm<FormData>({
     defaultValues: defaultValues || {}
   })
 
+  const submittingRef = useRef(false)
+
   useEffect(() => {
     if (isOpen) {
       reset(defaultValues || {})
+      submittingRef.current = false
     }
   }, [isOpen, defaultValues, reset])
 
   const handleFormSubmit = (data: FormData) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+
     if (!userUUID) {
       console.error("User UUID is null")
+      submittingRef.current = false
       return
     }
 
-    data.createdBy = userUUID
-    data.companyId = selectedCompanyId ?? ""
-    data.workspaceId = defaultValues?.workspaceId || ""
-    data.projectId = defaultValues?.id || ""
+    let submissionData: Partial<Role> | FormData = {
+      ...data,
+      created_user: userUUID
+    }
 
-    onSubmit(data)
+    if (type === "role") {
+      submissionData = {
+        id: data.id,
+        name: data.name,
+        companyId: data.companyId || selectedCompanyId || "",
+        created_user: userUUID
+      }
+    } else if (type === "rolePermission") {
+      submissionData = {
+        id: data.id,
+        roleId: data.roleId,
+        permissionId: data.permissionId,
+        created_user: userUUID
+      }
+    }
+
+    onSubmit(submissionData)
   }
 
   const formatDateForInput = (dateString: string | undefined) => {
@@ -73,7 +113,8 @@ const ModalForm: React.FC<{
     return date.toISOString().split("T")[0]
   }
 
-  const validateEndDate = (endDate: string) => {
+  const validateEndDate = (endDate: string | undefined) => {
+    if (!endDate) return true
     const startDate = watch("startDate")
     if (!startDate) return true
     return new Date(endDate) >= new Date(startDate) || "End date must be after start date"
@@ -84,18 +125,22 @@ const ModalForm: React.FC<{
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {type === "company" ? "Company" : type === "workspace" ? "Workspace" : "Project"}{" "}
+            {type === "company"
+              ? "Company"
+              : type === "workspace"
+              ? "Workspace"
+              : type === "project"
+              ? "Project"
+              : type === "permission"
+              ? "Permission"
+              : type === "role"
+              ? "Role"
+              : "Role-Permission"}{" "}
             Details
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          {type === "project" && defaultValues?.id ? (
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <p className="text-muted-foreground">{defaultValues.name}</p>
-              <input type="hidden" {...register("name")} defaultValue={defaultValues.name} />
-            </div>
-          ) : (
+          {type !== "rolePermission" && (
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input id="name" {...register("name", { required: true })} placeholder="Name" />
@@ -173,13 +218,103 @@ const ModalForm: React.FC<{
               <input type="hidden" {...register("projectId")} value={defaultValues?.id || ""} />
             </>
           )}
-          {error && <p className="text-sm text-destructive">{error}</p>}{" "}
-          {/* Display error message */}
+          {type === "permission" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="permissionUrl">Permission URL</Label>
+                <Input
+                  id="permissionUrl"
+                  {...register("permissionUrl", { required: true })}
+                  placeholder="Permission URL"
+                />
+                {errors.permissionUrl && (
+                  <p className="text-sm text-destructive">This field is required</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="permissionType">Permission Type</Label>
+                <Controller
+                  name="permissionType"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <select {...field} className="w-full p-2 border rounded">
+                      <option value="">Select Permission Type</option>
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="DELETE">DELETE</option>
+                    </select>
+                  )}
+                />
+                {errors.permissionType && (
+                  <p className="text-sm text-destructive">This field is required</p>
+                )}
+              </div>
+            </>
+          )}
+          {type === "role" && (
+            <>
+              <input type="hidden" {...register("id")} defaultValue={defaultValues?.id || ""} />
+              <input
+                type="hidden"
+                {...register("companyId")}
+                defaultValue={selectedCompanyId || ""}
+              />
+            </>
+          )}
+          {type === "rolePermission" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="roleId">Role</Label>
+                <Controller
+                  name="roleId"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <select {...field} className="w-full p-2 border rounded">
+                      <option value="">Select Role</option>
+                      {roles?.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+                {errors.roleId && (
+                  <p className="text-sm text-destructive">This field is required</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="permissionId">Permission</Label>
+                <Controller
+                  name="permissionId"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <select {...field} className="w-full p-2 border rounded">
+                      <option value="">Select Permission</option>
+                      {permissions?.map((permission) => (
+                        <option key={permission.id} value={permission.id}>
+                          {permission.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+                {errors.permissionId && (
+                  <p className="text-sm text-destructive">This field is required</p>
+                )}
+              </div>
+            </>
+          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end space-x-2">
             <Button variant="outline" type="button" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || submittingRef.current}>
               {isPending ? "Saving..." : label}
             </Button>
           </div>

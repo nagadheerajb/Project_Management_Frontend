@@ -5,6 +5,9 @@ import Home from "./pages/home"
 import Dashboard from "./pages/Dashboard"
 import TaskBoard from "./pages/TaskBoard" // Import TaskBoard
 import SignUpPage from "./pages/SignUpPage"
+import RoleManagement from "./pages/RoleManagement" // Import Role Management
+import PermissionManagement from "./pages/PermissionManagement" // Import Permission Management
+import RolePermissionManagement from "./pages/RolePermissionManagement" // Import Role-Permission Management
 import ErrorBoundary from "./components/forms/common/ErrorBoundary"
 import ProtectedRoute from "./components/forms/common/protected-route"
 import { WorkspaceProvider } from "@/context/workspace-context"
@@ -41,6 +44,34 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+
+                {/* Add New Routes */}
+                <Route
+                  path="/roles"
+                  element={
+                    <ProtectedRoute>
+                      <RoleManagement /> {/* Role Management component */}
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/permissions"
+                  element={
+                    <ProtectedRoute>
+                      <PermissionManagement /> {/* Permission Management component */}
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/role-permissions"
+                  element={
+                    <ProtectedRoute>
+                      <RolePermissionManagement /> {/* Role-Permission Management component */}
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Fallback */}
                 <Route path="*" element={<Navigate to="/login" />} />
               </Routes>
             </WorkspaceProvider>

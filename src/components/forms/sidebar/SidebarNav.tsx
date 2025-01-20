@@ -11,7 +11,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import { ChevronsUpDown, Plus } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useNavigate } from "react-router-dom" // Add this import
+import { useNavigate } from "react-router-dom"
 
 async function fetchWorkspaces(): Promise<Workspace[]> {
   const response = await api.get("/workspace-users/my-workspaces")
@@ -25,7 +25,7 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
   const { selectedCompany, setSelectedCompany } = useCompany()
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({})
   const { open } = useSidebar()
-  const navigate = useNavigate() // Initialize navigation
+  const navigate = useNavigate()
 
   const toggleSection = (companyId: string) => {
     setOpenSections((prev) => ({ ...prev, [companyId]: !prev[companyId] }))
@@ -45,15 +45,15 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
     setSelectedCompany(workspace.companyId)
     setSelectedType("workspace")
     localStorage.setItem("workspaceId", workspace.workspaceId)
-    navigate("/dashboard") // Navigate to the workspace dashboard
+    navigate("/dashboard")
   }
 
   const handleCompanyClick = (companyId: string) => {
     setSelectedCompany(companyId)
-    setSelectedWorkspace("")
+    setSelectedWorkspace(null)
     setSelectedType("company")
     toggleSection(companyId)
-    navigate("/dashboard") // Navigate to the company dashboard
+    navigate("/dashboard")
   }
 
   const groupedWorkspaces = workspaces?.reduce((acc, workspace) => {
@@ -94,7 +94,7 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
                   <Button
                     variant={selectedCompany === companyId ? "secondary" : "ghost"}
                     className="w-full justify-start px-2"
-                    onClick={() => handleCompanyClick(companyId)} // Trigger navigation
+                    onClick={() => handleCompanyClick(companyId)}
                   >
                     <ChevronsUpDown className="h-4 w-4 mr-2" />
                     {open && <span className="truncate">{companyName}</span>}
@@ -121,7 +121,7 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
                     key={workspace.workspaceId}
                     variant={selectedWorkspace === workspace.workspaceId ? "secondary" : "ghost"}
                     className="w-full justify-start pl-6"
-                    onClick={() => handleWorkspaceClick(workspace)} // Trigger navigation
+                    onClick={() => handleWorkspaceClick(workspace)}
                   >
                     <Avatar className="h-6 w-6 mr-2">
                       <AvatarFallback style={{ backgroundColor: workspace.color }}>

@@ -108,3 +108,29 @@ export interface PaginatedResponse<T> {
   number: number
   empty: boolean
 }
+
+// Role Interface
+export interface Role {
+  id?: string
+  name: string
+  companyId: string
+  createdDate?: string
+  created_user?: string
+}
+
+// Permission Interface
+export interface Permission {
+  id?: string
+  name: string
+  permissionUrl: string
+  permissionType: "GET" | "POST" | "PUT" | "DELETE"
+  created_user?: string
+}
+
+// RolePermission Interface
+export interface RolePermission {
+  id?: string
+  roleId: string
+  permissionId: string
+  created_user?: string
+}
