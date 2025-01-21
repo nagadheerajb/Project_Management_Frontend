@@ -41,10 +41,10 @@ const RolePermissionManagementContent: React.FC = () => {
     setFormError(null)
   }
 
-  const handleFormSubmit = (data: RolePermission) => {
-    const payload = {
+  const handleFormSubmit = (data: any) => {
+    const payload: RolePermission = {
       ...data,
-      created_user: userUUID
+      created_user: userUUID || undefined
     }
 
     if (editRolePermission?.id) {

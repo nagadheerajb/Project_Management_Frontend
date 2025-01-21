@@ -19,10 +19,12 @@ type FormData = CompanyData &
   Partial<WorkspaceData> &
   Partial<Project> &
   Partial<Permission> &
+  Partial<Role> &
   Partial<RolePermission> & {
-    createdBy: string
-    projectId: string
-    workspaceId: string
+    id?: string
+    createdBy?: string
+    projectId?: string
+    workspaceId?: string
   }
 
 const ModalFormHandler: React.FC<{

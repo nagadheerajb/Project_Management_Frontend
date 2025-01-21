@@ -30,7 +30,7 @@ type FormData = CompanyData &
 const ModalForm: React.FC<{
   type: "company" | "workspace" | "project" | "permission" | "role" | "rolePermission"
   defaultValues?: FormData
-  onSubmit: (data: Partial<Role> | FormData) => void
+  onSubmit: (data: any) => void
   isOpen: boolean
   onClose: () => void
   isPending: boolean
@@ -83,24 +83,24 @@ const ModalForm: React.FC<{
       return
     }
 
-    let submissionData: Partial<Role> | FormData = {
+    let submissionData: any = {
       ...data,
       created_user: userUUID
     }
 
     if (type === "role") {
       submissionData = {
+        ...submissionData,
         id: data.id,
-        name: data.name,
-        companyId: data.companyId || selectedCompanyId || "",
-        created_user: userUUID
+        name: data.name || "",
+        companyId: data.companyId || selectedCompanyId || ""
       }
     } else if (type === "rolePermission") {
       submissionData = {
+        ...submissionData,
         id: data.id,
-        roleId: data.roleId,
-        permissionId: data.permissionId,
-        created_user: userUUID
+        roleId: data.roleId || "",
+        permissionId: data.permissionId || ""
       }
     }
 

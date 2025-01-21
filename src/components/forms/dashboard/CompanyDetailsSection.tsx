@@ -30,7 +30,7 @@ const CompanyDetailsSection: React.FC<{
         window.location.href = "/permissions"
         break
       case "roles":
-        window.location.href = `/roles?companyId=${selectedCompany}`
+        window.location.href = "/roles"
         break
       case "role-permissions":
         window.location.href = "/role-permissions"

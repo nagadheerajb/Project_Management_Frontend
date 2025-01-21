@@ -1,8 +1,9 @@
-import React from "react"
-import EditButton from "@/components/forms/dashboard/EditButton"
-import DeleteButton from "@/components/forms/dashboard/DeleteButton"
+import type React from "react"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, Clock, User, AlertCircle } from "lucide-react"
 
 const ProjectDetails: React.FC<{
   project: any
@@ -18,38 +19,45 @@ const ProjectDetails: React.FC<{
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-semibold">Project Details</h3>
-        <div className="space-x-2 flex">
-          <EditButton onClick={onEdit} />
-          <DeleteButton onClick={() => onDelete(project.id)} id={project.id} />
-          <Button onClick={handleViewTasks} variant="default" size="sm">
-            View Tasks
-          </Button>
+    <Card>
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
+        <CardTitle className="text-2xl font-bold">{project.name}</CardTitle>
+        <Badge variant={project.status ? "default" : "secondary"}>
+          {project.status ? "Active" : "Inactive"}
+        </Badge>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>Start Date: {new Date(project.startDate).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span>
+              End Date: {project.endDate ? new Date(project.endDate).toLocaleDateString() : "N/A"}
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span>Created By: {project.createdByUserId}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <span>Description: {project.description}</span>
+          </div>
         </div>
-      </div>
-      <div className="p-4 border rounded-md">
-        <h4 className="text-xl font-semibold">{project.name}</h4>
-        <p>{project.description}</p>
-        <p>
-          <strong>Created Date:</strong> {new Date(project.createdDate).toLocaleString()}
-        </p>
-        <p>
-          <strong>Start Date:</strong> {new Date(project.startDate).toLocaleDateString()}
-        </p>
-        <p>
-          <strong>End Date:</strong>{" "}
-          {project.endDate ? new Date(project.endDate).toLocaleDateString() : "N/A"}
-        </p>
-        <p>
-          <strong>Created By:</strong> {project.createdByUserId}
-        </p>
-        <p>
-          <strong>Status:</strong> {project.status ? "Active" : "Inactive"}
-        </p>
-      </div>
-    </div>
+        <div className="flex flex-wrap justify-end gap-2 mt-4">
+          <Button onClick={onEdit} variant="outline">
+            Edit
+          </Button>
+          <Button onClick={() => onDelete(project.id)} variant="destructive">
+            Delete
+          </Button>
+          <Button onClick={handleViewTasks}>View Tasks</Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
