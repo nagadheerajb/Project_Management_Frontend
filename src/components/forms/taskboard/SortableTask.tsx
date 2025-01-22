@@ -1,7 +1,9 @@
-import React from "react"
+import type React from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Task } from "@/types/interfaces"
+import type { Task } from "@/types/interfaces"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
 interface SortableTaskProps {
   id: string
@@ -24,6 +26,9 @@ const SortableTask: React.FC<SortableTaskProps> = ({ id, task, onTaskClick }) =>
     opacity: isDragging ? 0.5 : 1
   }
 
+  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date()
+  const isHighPriority = task.priority === "HIGH_PRIORITY"
+
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -37,11 +42,23 @@ const SortableTask: React.FC<SortableTaskProps> = ({ id, task, onTaskClick }) =>
       style={style}
       {...attributes}
       {...listeners}
-      className="p-2 bg-white rounded shadow cursor-pointer"
+      className={cn(
+        "p-2 bg-white rounded shadow cursor-pointer transition-all duration-200",
+        isOverdue && "border-l-4 border-red-500",
+        isHighPriority && "border-r-4 border-yellow-500"
+      )}
       onClick={handleClick}
     >
-      <h4 className="font-bold">{task.name}</h4>
+      <h4 className={cn("font-bold", isHighPriority && "text-yellow-600")}>{task.name}</h4>
       <p className="text-sm text-gray-500">{task.description}</p>
+      <div className="flex justify-between items-center mt-2">
+        <Badge variant={isOverdue ? "destructive" : "outline"} className="text-xs">
+          {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date"}
+        </Badge>
+        <Badge variant={isHighPriority ? "warning" : "outline"} className="text-xs">
+          {task.priority.replace("_", " ")}
+        </Badge>
+      </div>
     </div>
   )
 }

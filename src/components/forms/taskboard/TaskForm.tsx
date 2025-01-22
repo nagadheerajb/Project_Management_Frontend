@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react"
+import type React from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Task } from "@/types/interfaces"
+import { UserSearch } from "@/components/forms/taskboard/UserSearch"
+import type { Task } from "@/types/interfaces"
 import { formatDate } from "@/utils/format-date"
+import { useUser } from "@/context/user-context"
 
 interface TaskFormProps {
   formData: Task
@@ -13,11 +16,14 @@ interface TaskFormProps {
 
 const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPending }) => {
   const [localFormData, setLocalFormData] = useState<Task>(formData)
+  const { userUUID } = useUser()
 
   useEffect(() => {
-    // Update localFormData when formData prop changes
-    setLocalFormData(formData)
-  }, [formData])
+    setLocalFormData((prev) => ({
+      ...formData,
+      createdUserId: formData.createdUserId || userUUID || prev.createdUserId || ""
+    }))
+  }, [formData, userUUID])
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -30,7 +36,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
     const { name, value } = e.target
     setLocalFormData((prev) => ({
       ...prev,
-      [name]: value ? formatDate(value) : undefined // Format date using the utility
+      [name]: value ? formatDate(value) : undefined
     }))
   }
 
@@ -41,6 +47,19 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
       ...prev,
       attachments: attachments
     }))
+  }
+
+  const handleUserSelect = (userId: string, userName: string) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      assignedUserId: userId
+    }))
+  }
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onCancel()
   }
 
   return (
@@ -97,13 +116,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
         </select>
       </div>
       <div className="space-y-2">
-        <label htmlFor="assignedUserId">Assigned User</label>
-        <Input
-          id="assignedUserId"
-          name="assignedUserId"
-          value={localFormData.assignedUserId}
-          onChange={handleInputChange}
-          placeholder="Assigned User ID"
+        <label htmlFor="assignedUser">Assigned User</label>
+        <UserSearch
+          initialUserId={localFormData.assignedUserId}
+          initialUserName={localFormData.assignedUserName}
+          onUserSelect={(userId, userName) => {
+            handleUserSelect(userId, userName)
+          }}
         />
       </div>
       <div className="space-y-2">
@@ -138,11 +157,25 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
           placeholder="Comma-separated attachment URLs"
         />
       </div>
+      <input
+        type="hidden"
+        name="createdUserId"
+        value={localFormData.createdUserId || userUUID || ""}
+      />
       <div className="flex justify-between items-center mt-4">
-        <Button variant="outline" disabled={isPending} onClick={onCancel}>
+        <Button variant="outline" disabled={isPending} onClick={handleCancel}>
           Cancel
         </Button>
-        <Button variant="secondary" disabled={isPending} onClick={() => onSave(localFormData)}>
+        <Button
+          variant="secondary"
+          disabled={isPending}
+          onClick={() =>
+            onSave({
+              ...localFormData,
+              createdUserId: userUUID || ""
+            })
+          }
+        >
           {isPending ? "Saving..." : formData.id ? "Update" : "Create"}
         </Button>
       </div>

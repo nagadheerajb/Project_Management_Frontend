@@ -21,6 +21,9 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useUser } from "@/context/user-context"
+import { UserSearch } from "@/components/forms/taskboard/UserSearch"
+import { useFetchUser } from "@/hooks/useFetchUser"
 
 interface TaskDialogProps {
   task: Task | null
@@ -71,6 +74,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [localTask, setLocalTask] = useState<Task | null>(null)
   const [editedTask, setEditedTask] = useState<Task | null>(null)
+  const { user, userUUID } = useUser()
 
   useEffect(() => {
     if (isOpen) {
@@ -81,14 +85,16 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
             resolvedDate: task.resolvedDate ? formatDate(task.resolvedDate) : undefined,
             createdDate: task.createdDate ? formatDate(task.createdDate) : undefined,
             taskStatus: task.taskStatus as Task["taskStatus"],
-            priority: task.priority as Task["priority"]
+            priority: task.priority as Task["priority"],
+            createdUserId: task.createdUserId || userUUID || "",
+            assignedUserId: task.assignedUserId || ""
           }
         : {
             name: "",
             description: "",
             taskStatus: "TODO" as const,
             projectId,
-            createdUserId: "",
+            createdUserId: userUUID || "",
             assignedUserId: "",
             priority: "MEDIUM_PRIORITY" as const,
             attachments: [],
@@ -104,7 +110,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       setEditedTask(null)
       setIsEditMode(false)
     }
-  }, [isOpen, task, projectId])
+  }, [isOpen, task, projectId, user, userUUID])
 
   const handleEditToggle = () => {
     setIsEditMode((prev) => !prev)
@@ -113,34 +119,29 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
   const handleInputChange = (field: keyof Task, value: string) => {
     if (editedTask) {
-      if (field === "taskStatus") {
-        setEditedTask({
-          ...editedTask,
-          [field]: value as Task["taskStatus"]
-        })
-      } else if (field === "priority") {
-        setEditedTask({
-          ...editedTask,
-          [field]: value as Task["priority"]
-        })
-      } else if (field === "attachments") {
-        setEditedTask({
-          ...editedTask,
-          [field]: value.split(",").map((item) => item.trim())
-        })
-      } else {
-        setEditedTask({
-          ...editedTask,
-          [field]: value
-        })
-      }
+      setEditedTask((prev) => {
+        if (!prev) return prev
+        if (field === "taskStatus") {
+          return { ...prev, [field]: value as Task["taskStatus"] }
+        } else if (field === "priority") {
+          return { ...prev, [field]: value as Task["priority"] }
+        } else if (field === "attachments") {
+          return { ...prev, [field]: value.split(",").map((item) => item.trim()) }
+        } else {
+          return { ...prev, [field]: value }
+        }
+      })
     }
   }
 
   const handleSave = () => {
     if (editedTask) {
-      onUpdate(editedTask)
-      setLocalTask(editedTask)
+      const updatedTask = {
+        ...editedTask,
+        createdUserId: editedTask.createdUserId || userUUID || ""
+      }
+      onUpdate(updatedTask)
+      setLocalTask(updatedTask)
       setIsEditMode(false)
     }
   }
@@ -148,13 +149,23 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   const handleCancel = () => {
     setEditedTask(localTask)
     setIsEditMode(false)
+    onClose()
   }
 
   return (
     <AnimatePresence>
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col">
+          <DialogContent
+            className="max-w-4xl h-[90vh] p-0 flex flex-col"
+            onInteractOutside={(e) => {
+              e.preventDefault()
+              onClose()
+            }}
+          >
+            <div id="task-dialog-description" className="sr-only">
+              This dialog contains task details and allows you to edit or delete the task.
+            </div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -293,19 +304,18 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                                   <User className="h-4 w-4 text-gray-500" />
                                   <span className="font-medium">Assigned To:</span>
                                   {isEditMode ? (
-                                    <Input
-                                      value={editedTask?.assignedUserId || ""}
-                                      onChange={(e) =>
-                                        handleInputChange("assignedUserId", e.target.value)
+                                    <UserSearch
+                                      initialUserId={editedTask?.assignedUserId || ""}
+                                      onUserSelect={(userId) =>
+                                        handleInputChange("assignedUserId", userId)
                                       }
-                                      placeholder="User ID"
-                                      className="w-[200px]"
                                     />
                                   ) : (
-                                    <span>{localTask?.assignedUserId || "Unassigned"}</span>
+                                    <AssignedUserDisplay userId={localTask?.assignedUserId} />
                                   )}
                                 </div>
                               </div>
+
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-gray-500" />
@@ -326,6 +336,15 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                                   )}
                                 </div>
                               </div>
+                              {(localTask?.id || isEditMode) && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-gray-500" />
+                                    <span className="font-medium">Created By:</span>
+                                    <CreatedUserDisplay userId={localTask?.createdUserId} />
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             <div className="space-y-4">
                               <div className="flex items-center gap-2">
@@ -455,6 +474,26 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       </AnimatePresence>
     </AnimatePresence>
   )
+}
+
+const AssignedUserDisplay: React.FC<{ userId?: string }> = ({ userId }) => {
+  const { userDetails, isLoading, error } = useFetchUser(userId || "")
+
+  if (isLoading) return <span>Loading...</span>
+  if (error) return <span>Error loading user</span>
+  if (!userDetails) return <span>Unassigned</span>
+
+  return <span>{`${userDetails.firstName} ${userDetails.lastName}`}</span>
+}
+
+const CreatedUserDisplay: React.FC<{ userId?: string }> = ({ userId }) => {
+  const { userDetails, isLoading, error } = useFetchUser(userId || "")
+
+  if (isLoading) return <span>Loading...</span>
+  if (error) return <span>Error loading user</span>
+  if (!userDetails) return <span>Unknown</span>
+
+  return <span>{`${userDetails.firstName} ${userDetails.lastName}`}</span>
 }
 
 export default TaskDialog
