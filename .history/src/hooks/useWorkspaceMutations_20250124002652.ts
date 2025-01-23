@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createWorkspace, updateWorkspace, deleteWorkspace } from "@/api/workspace"
 import { WorkspaceData } from "@/types/interfaces"
-import { refreshToken } from "@/api/auth"
+import { refreshToken } from "@/api/auth" // Import the refreshToken function
 
 interface WorkspaceResponse {
   data: any // Define the response structure if known

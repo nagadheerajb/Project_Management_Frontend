@@ -4,7 +4,6 @@ import Sidebar from "@/components/forms/sidebar/Side-bar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import Header from "@/components/forms/common/header"
-import Footer from "@/components/forms/common/footer"
 import DashboardContent from "@/components/forms/dashboard/dashboard-content"
 import { WorkspaceProvider } from "@/context/workspace-context"
 import { UserProvider } from "@/context/user-context"
@@ -18,7 +17,7 @@ const Dashboard: React.FC = () => {
       <SidebarProvider>
         <UserProvider>
           <WorkspaceProvider>
-            <PageLayout header={<Header />} sidebar={<Sidebar />} footer={<Footer />}>
+            <PageLayout header={<Header />} sidebar={<Sidebar />}>
               <DashboardContent />
             </PageLayout>
           </WorkspaceProvider>

@@ -37,7 +37,9 @@ api.interceptors.request.use(
       !config.url?.includes("/auth/login") &&
       !config.url?.includes("/auth/signup") &&
       !config.url?.includes("/users/me") &&
-      !config.url?.includes("/companies/my-companies")
+      !config.url?.includes("/companies/my-companies") &&
+      !config.url?.includes("/companies/{companyId}") &&
+      !config.url?.includes("/workspaces/{workspaceId}")
     ) {
       let workspaceId = localStorage.getItem("workspaceId")
       if (workspaceId) {

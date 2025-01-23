@@ -14,12 +14,15 @@ export interface SignUpFormInputs {
 
 export const login = async (data: LoginFormInputs) => {
   try {
+    // Log the payload being sent to the backend
     console.log("Login Payload:", data)
 
     const response = await api.post("/auth/login", data)
 
+    // Log the complete response received from the backend
     console.log("Login API Response:", response.data)
 
+    // Extract and log the accessToken
     const accessToken = response.data.data?.accessToken
     console.log("Extracted Access Token:", accessToken)
 
@@ -30,6 +33,7 @@ export const login = async (data: LoginFormInputs) => {
     localStorage.setItem("jwt", accessToken) // Store token in localStorage
     return response.data
   } catch (error: any) {
+    // Log the error details
     console.error("Error during login:", error)
 
     if (error.response) {
@@ -52,36 +56,6 @@ export const signUp = async (data: SignUpFormInputs) => {
     if (error.response) {
       const apiErrorMessage =
         error.response.data.errors?.[0]?.message || "An error occurred while signing up."
-      throw new Error(apiErrorMessage)
-    } else if (error.request) {
-      throw new Error("No response received from the server. Please try again later.")
-    } else {
-      throw new Error("An unexpected error occurred. Please try again.")
-    }
-  }
-}
-
-export const refreshToken = async (currentToken: string) => {
-  try {
-    const response = await api.post("/auth/refresh-token", { token: currentToken })
-
-    console.log("Refresh Token API Response:", response.data)
-
-    const newAccessToken = response.data.data?.accessToken
-    console.log("Extracted New Access Token:", newAccessToken)
-
-    if (!newAccessToken) {
-      throw new Error("Access token not found in the response.")
-    }
-
-    localStorage.setItem("jwt", newAccessToken) // Update the token in localStorage
-    return { accessToken: newAccessToken }
-  } catch (error: any) {
-    console.error("Error during token refresh:", error)
-
-    if (error.response) {
-      const apiErrorMessage =
-        error.response.data.errors?.[0]?.message || "An error occurred while refreshing the token."
       throw new Error(apiErrorMessage)
     } else if (error.request) {
       throw new Error("No response received from the server. Please try again later.")

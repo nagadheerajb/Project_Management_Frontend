@@ -1,5 +1,5 @@
 import type React from "react"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { useWorkspace } from "@/context/workspace-context"
 import { useUser } from "@/context/user-context"
 import { useCompanyMutations } from "@/hooks/useCompanyMutations"
@@ -20,8 +20,8 @@ const DashboardContent: React.FC = () => {
   const [formKey, setFormKey] = useState(0)
   const { handleDelete, isPending, setIsPending } = useWorkspaceActions()
   const [error, setError] = useState<string | null>(null)
-  const [roles, setRoles] = useState<Role[]>([]) // Added roles state
-  const [permissions, setPermissions] = useState<Permission[]>([]) // Added permissions state
+  const [roles, setRoles] = useState<Role[]>([])
+  const [permissions, setPermissions] = useState<Permission[]>([])
 
   const { deleteCompanyMutation } = useCompanyMutations()
   const { deleteProjectMutation } = useProjectMutations()
@@ -52,47 +52,59 @@ const DashboardContent: React.FC = () => {
   }, [])
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      {(!selectedType || (!selectedWorkspace && !selectedCompany)) && (
-        <div className="text-center text-gray-500">
-          Welcome to Project Management Dashboard. Please select a company or workspace from the
-          sidebar to view company or workspace details.
-        </div>
-      )}
-      <AnimatePresence mode="wait">
-        {selectedType === "workspace" && selectedWorkspace && (
-          <motion.div
-            key="workspace"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <WorkspaceDetailsSection
-              selectedWorkspace={selectedWorkspace}
-              onEdit={handleEdit}
-              onDelete={(id) => handleDelete("workspace", id)}
-              onCreateProject={(workspaceId) => handleEdit("project", { workspaceId })}
-              onDeleteProject={handleDeleteProject}
-            />
-          </motion.div>
-        )}
-        {selectedType === "company" && selectedCompany && (
-          <motion.div
-            key="company"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <CompanyDetailsSection
-              selectedCompany={selectedCompany}
-              onEdit={(details) => handleEdit("company", details)}
-              onDelete={(id) => deleteCompanyMutation.mutate(id)}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="h-full overflow-auto">
+      <div className="p-6">
+        <AnimatePresence mode="wait">
+          {(!selectedType || (!selectedWorkspace && !selectedCompany)) && (
+            <motion.div
+              key="welcome"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center justify-center min-h-[calc(100vh-8rem)]"
+            >
+              <div className="text-center text-muted-foreground">
+                Welcome to Project Management Dashboard. Please select a company or workspace from
+                the sidebar to view details.
+              </div>
+            </motion.div>
+          )}
+          {selectedType === "workspace" && selectedWorkspace && (
+            <motion.div
+              key="workspace"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <WorkspaceDetailsSection
+                selectedWorkspace={selectedWorkspace}
+                onEdit={handleEdit}
+                onDelete={(id) => handleDelete("workspace", id)}
+                onCreateProject={(workspaceId) => handleEdit("project", { workspaceId })}
+                onDeleteProject={handleDeleteProject}
+              />
+            </motion.div>
+          )}
+          {selectedType === "company" && selectedCompany && (
+            <motion.div
+              key="company"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CompanyDetailsSection
+                selectedCompany={selectedCompany}
+                onEdit={(details) => handleEdit("company", details)}
+                onDelete={(id) => deleteCompanyMutation.mutate(id)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <ModalFormHandler
         key={formKey}
         isOpen={isModalOpen}
@@ -106,7 +118,6 @@ const DashboardContent: React.FC = () => {
         setError={setError}
         onSubmit={(data) => {
           console.log("Form submitted:", data)
-          // Handle form submission based on editType
           if (editType === "company") {
             // Handle company submission
           } else if (editType === "workspace") {

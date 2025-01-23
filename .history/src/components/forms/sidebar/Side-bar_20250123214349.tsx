@@ -71,7 +71,6 @@ const Sidebar: React.FC = () => {
         onSuccess: () => {
           setModalOpen(false)
           queryClient.invalidateQueries({ queryKey: ["workspaces"] })
-          queryClient.invalidateQueries({ queryKey: ["companies"] })
         },
         onError: (err) => {
           console.error("Error creating workspace:", err)

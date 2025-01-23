@@ -84,8 +84,8 @@ const ModalForm: React.FC<{
     }
 
     let submissionData: any = {
-      ...data
-      //created_user: userUUID
+      ...data,
+      created_user: userUUID
     }
 
     if (type === "role") {

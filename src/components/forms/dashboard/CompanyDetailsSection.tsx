@@ -1,7 +1,6 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { getCompanyDetails } from "@/api/company"
-import CompanyDetails from "@/components/forms/dashboard/company-details"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -9,7 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { ChevronDown } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChevronDown, MoreVertical } from "lucide-react"
 
 const CompanyDetailsSection: React.FC<{
   selectedCompany: string
@@ -24,54 +24,67 @@ const CompanyDetailsSection: React.FC<{
     }
   }, [selectedCompany])
 
-  const handleManageOption = (option: string) => {
-    switch (option) {
-      case "permissions":
-        window.location.href = "/permissions"
-        break
-      case "roles":
-        window.location.href = "/roles"
-        break
-      case "role-permissions":
-        window.location.href = "/role-permissions"
-        break
-    }
-  }
+  if (!companyDetails) return null
 
   return (
-    <>
-      {companyDetails && (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <CompanyDetails companyDetails={companyDetails} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Company Dashboard</h1>
+      </div>
+      <Card className="w-full">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-2xl font-bold">{companyDetails.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(companyDetails)}>
+                  Edit Company
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(selectedCompany)}>
+                  Delete Company
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                   Manage Company <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onSelect={() => onEdit(companyDetails)}>
-                  Edit Company
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onDelete(selectedCompany)}>
-                  Delete Company
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleManageOption("permissions")}>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => (window.location.href = "/permissions")}>
                   Manage Permissions
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleManageOption("roles")}>
+                <DropdownMenuItem onClick={() => (window.location.href = "/roles")}>
                   Manage Roles
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleManageOption("role-permissions")}>
+                <DropdownMenuItem onClick={() => (window.location.href = "/role-permissions")}>
                   Manage Role Permissions
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
-      )}
-    </>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium">Created Date:</span>
+              <span>{companyDetails.createdDate}</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium">Created By:</span>
+              <span className="font-mono text-sm">{companyDetails.createdBy}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
 

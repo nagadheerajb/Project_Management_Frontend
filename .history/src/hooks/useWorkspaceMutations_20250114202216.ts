@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createWorkspace, updateWorkspace, deleteWorkspace } from "@/api/workspace"
 import { WorkspaceData } from "@/types/interfaces"
-import { refreshToken } from "@/api/auth"
 
 interface WorkspaceResponse {
   data: any // Define the response structure if known
@@ -10,26 +9,10 @@ interface WorkspaceResponse {
 export const useWorkspaceMutations = () => {
   const queryClient = useQueryClient()
 
-  const handleTokenRefresh = async () => {
-    try {
-      const currentToken = localStorage.getItem("jwt")
-      if (currentToken) {
-        const newToken = await refreshToken(currentToken)
-        localStorage.setItem("jwt", newToken.accessToken)
-        console.log("Token refreshed successfully")
-      } else {
-        console.error("No token found for refreshing")
-      }
-    } catch (error) {
-      console.error("Error refreshing token:", error)
-    }
-  }
-
   const createWorkspaceMutation = useMutation<WorkspaceResponse, Error, WorkspaceData>({
     mutationFn: createWorkspace,
-    onSuccess: async () => {
-      await handleTokenRefresh() // Refresh the token after workspace creation
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] }) // Refetch the workspace data
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] })
     },
     onError: (error: Error) => {
       console.error("Error creating workspace:", error.message)
@@ -45,8 +28,7 @@ export const useWorkspaceMutations = () => {
     { id: string; updates: WorkspaceData }
   >({
     mutationFn: ({ id, updates }) => updateWorkspace(id, updates),
-    onSuccess: async () => {
-      await handleTokenRefresh() // Refresh the token after workspace update
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] })
     },
     onError: (error: Error) => {
@@ -59,8 +41,7 @@ export const useWorkspaceMutations = () => {
 
   const deleteWorkspaceMutation = useMutation<WorkspaceResponse, Error, string>({
     mutationFn: (id) => deleteWorkspace(id),
-    onSuccess: async () => {
-      await handleTokenRefresh() // Refresh the token after workspace deletion
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] })
     },
     onError: (error: Error) => {
