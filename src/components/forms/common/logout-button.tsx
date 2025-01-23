@@ -11,9 +11,9 @@ const LogoutButton: React.FC = () => {
 
   return (
     <Button
-      variant="destructive"
+      variant="ghost" // Use a cleaner variant for dropdown
       onClick={handleLogout}
-      className="text-white bg-red-600 hover:bg-red-700"
+      className="text-red-600 hover:text-red-700 flex items-center justify-start w-full"
     >
       Logout
     </Button>

@@ -53,6 +53,12 @@ const DashboardContent: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      {(!selectedType || (!selectedWorkspace && !selectedCompany)) && (
+        <div className="text-center text-gray-500">
+          Welcome to Project Management Dashboard. Please select a company or workspace from the
+          sidebar to view company or workspace details.
+        </div>
+      )}
       <AnimatePresence mode="wait">
         {selectedType === "workspace" && selectedWorkspace && (
           <motion.div
