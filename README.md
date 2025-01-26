@@ -72,7 +72,7 @@ frontend_project
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/your-repo-name.git
+   git clone https://github.com/nagadheerajb/fs19_frontend.git
    cd your-repo-name
    ```
 2. Install dependencies:
@@ -83,7 +83,7 @@ frontend_project
    ```bash
    yarn dev
    ```
-4. Open the app in your browser at `http://localhost:5173`.
+4. Open the app in your browser at `http://localhost:3000`.
 
 ---
 
