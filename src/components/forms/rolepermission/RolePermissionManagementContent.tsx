@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import ModalFormHandler from "@/components/forms/common/ModalFormHandler"
 import { Trash, Edit, Plus } from "lucide-react"
 import { useUser } from "@/context/user-context"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const RolePermissionManagementContent: React.FC = () => {
   const { data: rolePermissions, isLoading, isError, error } = useRolePermissions()
@@ -104,39 +105,77 @@ const RolePermissionManagementContent: React.FC = () => {
         </Button>
       </div>
 
-      <table className="w-full bg-white shadow-md rounded-lg overflow-hidden">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="text-left p-3">Role</th>
-            <th className="text-left p-3">Permission</th>
-            <th className="text-left p-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rolePermissions?.map((rolePermission) => (
-            <tr key={rolePermission.id} className="border-b">
-              <td className="p-3">
-                {roles?.find((role) => role.id === rolePermission.roleId)?.name || "Unknown Role"}
-              </td>
-              <td className="p-3">
-                {permissions?.find((permission) => permission.id === rolePermission.permissionId)
-                  ?.name || "Unknown Permission"}
-              </td>
-              <td className="p-3 flex space-x-2">
-                <Button variant="secondary" onClick={() => handleOpenModal(rolePermission)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteRolePermission(rolePermission.id!)}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="relative">
+        <div className="absolute top-0 left-0 right-0 bg-gray-200 z-10">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Permission
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+        <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border">
+          <div className="min-w-full inline-block align-middle">
+            <div className="overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Permission
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {rolePermissions?.map((rolePermission) => (
+                    <tr key={rolePermission.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {roles?.find((role) => role.id === rolePermission.roleId)?.name ||
+                          "Unknown Role"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {permissions?.find(
+                          (permission) => permission.id === rolePermission.permissionId
+                        )?.name || "Unknown Permission"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleOpenModal(rolePermission)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleDeleteRolePermission(rolePermission.id!)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
 
       <ModalFormHandler
         isOpen={isModalOpen}

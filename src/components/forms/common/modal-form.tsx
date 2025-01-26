@@ -25,6 +25,8 @@ type FormData = CompanyData &
     createdBy?: string
     projectId?: string
     workspaceId?: string
+    roleId?: string
+    permissionId?: string
   }
 
 const ModalForm: React.FC<{
@@ -85,10 +87,33 @@ const ModalForm: React.FC<{
 
     let submissionData: any = {
       ...data
-      //created_user: userUUID
     }
 
-    if (type === "role") {
+    if (type === "project") {
+      if (data.id) {
+        // Payload for project update
+        submissionData = {
+          description: data.description || "",
+          startDate: formatDateForInput(data.startDate) || "",
+          endDate: formatDateForInput(data.endDate) || ""
+        }
+      } else {
+        // Payload for project creation
+        submissionData = {
+          ...submissionData,
+          description: data.description || "",
+          workspaceId: data.workspaceId || "",
+          startDate: data.startDate || "",
+          endDate: data.endDate || "",
+          createdByUserId: userUUID,
+          status: true // Default to active
+        }
+
+        if (!data.id) {
+          delete submissionData.projectId
+        }
+      }
+    } else if (type === "role") {
       submissionData = {
         ...submissionData,
         id: data.id,
@@ -100,10 +125,18 @@ const ModalForm: React.FC<{
         ...submissionData,
         id: data.id,
         roleId: data.roleId || "",
-        permissionId: data.permissionId || ""
+        permissionId: data.permissionId || "",
+        created_user: userUUID
+      }
+    } else if (type === "permission") {
+      submissionData = {
+        ...submissionData,
+        name: data.name || "",
+        permissionUrl: data.permissionUrl || "",
+        permissionType: data.permissionType || "GET",
+        createdBy: userUUID
       }
     }
-
     onSubmit(submissionData)
   }
 
@@ -143,7 +176,12 @@ const ModalForm: React.FC<{
           {type !== "rolePermission" && (
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" {...register("name", { required: true })} placeholder="Name" />
+              <Input
+                id="name"
+                {...register("name", { required: true })}
+                placeholder="Name"
+                disabled={type === "project" && !!defaultValues?.id} // Disable if editing a project
+              />
               {errors.name && <p className="text-sm text-destructive">This field is required</p>}
             </div>
           )}
@@ -179,7 +217,7 @@ const ModalForm: React.FC<{
                       {...field}
                       type="date"
                       placeholder="Start Date"
-                      defaultValue={formatDateForInput(defaultValues?.startDate)}
+                      value={field.value ? formatDateForInput(field.value) : ""}
                     />
                   )}
                 />
@@ -202,7 +240,7 @@ const ModalForm: React.FC<{
                       {...field}
                       type="date"
                       placeholder="End Date"
-                      defaultValue={formatDateForInput(defaultValues?.endDate)}
+                      value={field.value ? formatDateForInput(field.value) : ""}
                     />
                   )}
                 />
@@ -215,7 +253,9 @@ const ModalForm: React.FC<{
                 {...register("workspaceId")}
                 value={defaultValues?.workspaceId || ""}
               />
-              <input type="hidden" {...register("projectId")} value={defaultValues?.id || ""} />
+              {defaultValues?.id && (
+                <input type="hidden" {...register("projectId")} value={defaultValues.id} />
+              )}
             </>
           )}
           {type === "permission" && (
@@ -225,7 +265,7 @@ const ModalForm: React.FC<{
                 <Input
                   id="permissionUrl"
                   {...register("permissionUrl", { required: true })}
-                  placeholder="Permission URL"
+                  placeholder="Enter permission URL"
                 />
                 {errors.permissionUrl && (
                   <p className="text-sm text-destructive">This field is required</p>
@@ -233,76 +273,57 @@ const ModalForm: React.FC<{
               </div>
               <div className="space-y-2">
                 <Label htmlFor="permissionType">Permission Type</Label>
-                <Controller
-                  name="permissionType"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <select {...field} className="w-full p-2 border rounded">
-                      <option value="">Select Permission Type</option>
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="PUT">PUT</option>
-                      <option value="DELETE">DELETE</option>
-                    </select>
-                  )}
-                />
+                <select
+                  id="permissionType"
+                  {...register("permissionType", { required: true })}
+                  className="form-select"
+                >
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="DELETE">DELETE</option>
+                  <option value="PATCH">PATCH</option>
+                </select>
                 {errors.permissionType && (
                   <p className="text-sm text-destructive">This field is required</p>
                 )}
               </div>
             </>
           )}
-          {type === "role" && (
-            <>
-              <input type="hidden" {...register("id")} defaultValue={defaultValues?.id || ""} />
-              <input
-                type="hidden"
-                {...register("companyId")}
-                defaultValue={selectedCompanyId || ""}
-              />
-            </>
-          )}
           {type === "rolePermission" && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="roleId">Role</Label>
-                <Controller
-                  name="roleId"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <select {...field} className="w-full p-2 border rounded">
-                      <option value="">Select Role</option>
-                      {roles?.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
+                <select
+                  id="roleId"
+                  {...register("roleId", { required: true })}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Select a role</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </select>
                 {errors.roleId && (
                   <p className="text-sm text-destructive">This field is required</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="permissionId">Permission</Label>
-                <Controller
-                  name="permissionId"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <select {...field} className="w-full p-2 border rounded">
-                      <option value="">Select Permission</option>
-                      {permissions?.map((permission) => (
-                        <option key={permission.id} value={permission.id}>
-                          {permission.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                />
+                <select
+                  id="permissionId"
+                  {...register("permissionId", { required: true })}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="">Select a permission</option>
+                  {permissions.map((permission) => (
+                    <option key={permission.id} value={permission.id}>
+                      {permission.name}
+                    </option>
+                  ))}
+                </select>
                 {errors.permissionId && (
                   <p className="text-sm text-destructive">This field is required</p>
                 )}

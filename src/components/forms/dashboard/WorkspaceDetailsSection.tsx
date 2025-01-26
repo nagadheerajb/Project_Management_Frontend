@@ -1,5 +1,4 @@
-import type React from "react"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { getWorkspaceDetails } from "@/api/workspace"
 import { fetchProjects } from "@/api/project"
 import ProjectCollapsible from "./ProjectCollapsible"
@@ -23,7 +22,11 @@ const WorkspaceDetailsSection: React.FC<{
     if (selectedWorkspace.match(/^[0-9a-fA-F-]{36}$/)) {
       Promise.all([getWorkspaceDetails(selectedWorkspace), fetchProjects(selectedWorkspace)])
         .then(([workspaceData, projectsData]) => {
-          setWorkspaceDetails(workspaceData)
+          const augmentedWorkspaceData = {
+            ...workspaceData,
+            displayName: `${workspaceData.firstName || ""} ${workspaceData.lastName || ""}`.trim()
+          }
+          setWorkspaceDetails(augmentedWorkspaceData)
           setProjects(projectsData)
           setIsLoading(false)
         })
@@ -63,11 +66,33 @@ const WorkspaceDetailsSection: React.FC<{
           />
           <ProjectCollapsible
             projects={projects}
-            onCreateProject={() => onCreateProject(selectedWorkspace)}
+            onCreateProject={async () => await onCreateProject(selectedWorkspace)}
             onEditProject={(project) =>
               onEdit("project", { ...project, workspaceId: selectedWorkspace })
             }
             onDeleteProject={onDeleteProject}
+            onRefresh={() => {
+              setIsLoading(true)
+              Promise.all([
+                getWorkspaceDetails(selectedWorkspace),
+                fetchProjects(selectedWorkspace)
+              ])
+                .then(([workspaceData, projectsData]) => {
+                  const augmentedWorkspaceData = {
+                    ...workspaceData,
+                    displayName: `${workspaceData.firstName || ""} ${
+                      workspaceData.lastName || ""
+                    }`.trim()
+                  }
+                  setWorkspaceDetails(augmentedWorkspaceData)
+                  setProjects(projectsData)
+                  setIsLoading(false)
+                })
+                .catch((err) => {
+                  console.error("Error refreshing data:", err)
+                  setIsLoading(false)
+                })
+            }}
           />
         </>
       )}

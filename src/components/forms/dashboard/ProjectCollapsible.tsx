@@ -1,5 +1,4 @@
-import type React from "react"
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import ProjectList from "@/components/forms/dashboard/project-list"
 import ProjectDetails from "@/components/forms/dashboard/project-details"
@@ -9,16 +8,46 @@ import { Button } from "@/components/ui/button"
 
 const ProjectCollapsible: React.FC<{
   projects: any[]
-  onCreateProject: () => void
+  onCreateProject: () => Promise<any>
   onEditProject: (details: any) => void
   onDeleteProject: (id: string) => void
-}> = ({ projects, onCreateProject, onEditProject, onDeleteProject }) => {
+  onRefresh: () => void // Trigger refresh for workspaces and projects
+}> = ({ projects, onCreateProject, onEditProject, onDeleteProject, onRefresh }) => {
   const [isCollapsibleOpen, setCollapsibleOpen] = useState(true)
   const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [projectList, setProjectList] = useState<any[]>(projects)
+
+  useEffect(() => {
+    setProjectList(
+      projects.map((project) => ({
+        ...project,
+        displayName: `${project.firstName || ""} ${project.lastName || ""}`.trim() || "N/A"
+      }))
+    )
+  }, [projects])
 
   const handleProjectClick = (project: any) => {
-    setSelectedProject(project)
-    setCollapsibleOpen(false)
+    if (project) {
+      setSelectedProject(project)
+      setCollapsibleOpen(false)
+    }
+  }
+
+  const handleCreateProject = async () => {
+    try {
+      const newProject = await onCreateProject()
+      if (newProject) {
+        onRefresh() // Trigger refresh of workspaces and projects
+      }
+    } catch (error) {
+      console.error("Error creating project:", error)
+    }
+  }
+
+  const handleDeleteProject = (id: string) => {
+    onDeleteProject(id)
+    setProjectList((prevProjects) => prevProjects.filter((project) => project?.id !== id))
+    onRefresh() // Trigger refresh of workspaces and projects
   }
 
   return (
@@ -31,7 +60,7 @@ const ProjectCollapsible: React.FC<{
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <h3 className="text-2xl font-semibold">Projects</h3>
           <div className="flex items-center space-x-2">
-            <Button onClick={onCreateProject} size="sm">
+            <Button onClick={handleCreateProject} size="sm">
               <Plus className="mr-2 h-4 w-4" /> New Project
             </Button>
             <CollapsibleTrigger asChild>
@@ -52,7 +81,7 @@ const ProjectCollapsible: React.FC<{
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <ProjectList projects={projects} onProjectClick={handleProjectClick} />
+            <ProjectList projects={projectList} onProjectClick={handleProjectClick} />
           </motion.div>
         </CollapsibleContent>
       </Collapsible>
@@ -67,7 +96,7 @@ const ProjectCollapsible: React.FC<{
             <ProjectDetails
               project={selectedProject}
               onEdit={() => onEditProject(selectedProject)}
-              onDelete={() => onDeleteProject(selectedProject.id)}
+              onDelete={() => handleDeleteProject(selectedProject?.id)}
             />
           </motion.div>
         )}

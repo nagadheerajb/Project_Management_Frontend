@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import ModalFormHandler from "@/components/forms/common/ModalFormHandler"
 import { Trash, Edit, Plus } from "lucide-react"
 import { useUser } from "@/context/user-context" // Import the user context
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const PermissionManagementContent: React.FC = () => {
   const { data: permissions, isLoading, isError, error: apiError } = usePermissions()
@@ -94,36 +95,74 @@ const PermissionManagementContent: React.FC = () => {
         </Button>
       </div>
 
-      <table className="w-full bg-white shadow-md rounded-lg overflow-hidden">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="text-left p-3">Name</th>
-            <th className="text-left p-3">Type</th>
-            <th className="text-left p-3">URL</th>
-            <th className="text-left p-3">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {permissions?.map((permission) => (
-            <tr key={permission.id} className="border-b">
-              <td className="p-3">{permission.name}</td>
-              <td className="p-3">{permission.permissionType}</td>
-              <td className="p-3">{permission.permissionUrl}</td>
-              <td className="p-3 flex space-x-2">
-                <Button variant="secondary" onClick={() => handleOpenModal(permission)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeletePermission(permission.id!)}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="relative">
+        <div className="absolute top-0 left-0 right-0 bg-gray-200 z-10">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  URL
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+        <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border">
+          <div className="min-w-full inline-block align-middle">
+            <div className="overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      URL
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {permissions?.map((permission) => (
+                    <tr key={permission.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{permission.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{permission.permissionType}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{permission.permissionUrl}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          <Button variant="secondary" onClick={() => handleOpenModal(permission)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleDeletePermission(permission.id!)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
 
       {isModalOpen && (
         <ModalFormHandler

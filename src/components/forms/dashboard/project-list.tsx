@@ -4,24 +4,24 @@ const ProjectList: React.FC<{
   projects: any[]
   onProjectClick: (project: any) => void
 }> = ({ projects, onProjectClick }) => {
-  const handleProjectClick = (project: any) => {
-    onProjectClick(project) // Notify parent to update the selected project
+  if (!projects || projects.length === 0) {
+    return <div className="text-gray-600">No projects available.</div>
   }
 
   return (
-    <div>
-      <div className="space-y-4">
-        {projects.map((project) => (
-          <div
-            key={project.id}
-            className="p-4 border rounded-md cursor-pointer"
-            onClick={() => handleProjectClick(project)}
-          >
-            <h4 className="text-xl font-semibold">{project.name}</h4>
-            <p>{project.description}</p>
-          </div>
-        ))}
-      </div>
+    <div className="space-y-4">
+      {projects.map((project) => (
+        <div
+          key={project?.id || Math.random()} // Use a fallback key if `id` is missing
+          className="p-4 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer"
+          onClick={() => project && onProjectClick(project)} // Only call if project is valid
+        >
+          <h4 className="text-lg font-semibold">{project?.name || "Unnamed Project"}</h4>
+          <p className="text-sm text-gray-600">
+            {project?.description || "No description available"}
+          </p>
+        </div>
+      ))}
     </div>
   )
 }

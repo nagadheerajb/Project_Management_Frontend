@@ -21,7 +21,9 @@ async function fetchWorkspaces(): Promise<Workspace[]> {
 const SidebarNav: React.FC<{
   handleAddWorkspaceClick: (companyId: string) => void
   companies: CompanyData[]
-}> = ({ handleAddWorkspaceClick, companies }) => {
+  isLoadingCompanies: boolean
+  onRefresh: () => void
+}> = ({ handleAddWorkspaceClick, companies, isLoadingCompanies, onRefresh }) => {
   const {
     selectedWorkspace,
     setSelectedWorkspace,
@@ -48,6 +50,7 @@ const SidebarNav: React.FC<{
     setSelectedCompany(workspace.companyId)
     setSelectedType("workspace")
     localStorage.setItem("workspaceId", workspace.workspaceId)
+    onRefresh()
     navigate("/dashboard")
   }
 

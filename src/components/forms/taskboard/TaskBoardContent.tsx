@@ -294,22 +294,20 @@ const TaskBoardContent: React.FC<TaskBoardContentProps> = ({
   )
 
   const handleTaskDelete = useCallback(
-    (taskId: string) => {
-      deleteTaskMutation.mutate(taskId, {
-        onSuccess: () => {
-          setTasks((prevTasks) => {
-            const updatedTasks = prevTasks.filter((task) => task.id !== taskId)
-            if (typeof onTasksUpdate === "function") {
-              onTasksUpdate(updatedTasks)
-            }
-            return updatedTasks
-          })
-          handleDialogClose()
-        },
-        onError: (error) => {
-          console.error("Error deleting task:", error)
-        }
-      })
+    async (taskId: string) => {
+      try {
+        await deleteTaskMutation.mutateAsync(taskId)
+        setTasks((prevTasks) => {
+          const updatedTasks = prevTasks.filter((task) => task.id !== taskId)
+          if (typeof onTasksUpdate === "function") {
+            onTasksUpdate(updatedTasks)
+          }
+          return updatedTasks
+        })
+        handleDialogClose()
+      } catch (error) {
+        console.error("Error deleting task:", error)
+      }
     },
     [deleteTaskMutation, handleDialogClose, onTasksUpdate]
   )

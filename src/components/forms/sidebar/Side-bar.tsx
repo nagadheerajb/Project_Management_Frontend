@@ -29,6 +29,7 @@ const Sidebar: React.FC = () => {
   const { createWorkspaceMutation } = useWorkspaceMutations()
   const queryClient = useQueryClient()
 
+  // Fetch companies data
   const { data: companies = [], isLoading: isLoadingCompanies } = useQuery({
     queryKey: ["companies"],
     queryFn: fetchCompanies,
@@ -36,6 +37,12 @@ const Sidebar: React.FC = () => {
       console.error("Error fetching companies:", err)
     }
   })
+
+  // Refresh companies and workspaces
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["companies"] }) // Refresh companies
+    queryClient.invalidateQueries({ queryKey: ["workspaces"] }) // Refresh workspaces
+  }
 
   const handleAddCompanyClick = () => {
     setModalType("company")
@@ -58,9 +65,7 @@ const Sidebar: React.FC = () => {
       createCompanyMutation.mutate(data as CompanyData, {
         onSuccess: () => {
           setModalOpen(false)
-          // Invalidate queries to refetch the updated data
-          queryClient.invalidateQueries({ queryKey: ["companies"] })
-          queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+          handleRefresh() // Refresh data after company creation
         },
         onError: (err) => {
           console.error("Error creating company:", err)
@@ -70,8 +75,7 @@ const Sidebar: React.FC = () => {
       createWorkspaceMutation.mutate(data as WorkspaceData, {
         onSuccess: () => {
           setModalOpen(false)
-          queryClient.invalidateQueries({ queryKey: ["workspaces"] })
-          queryClient.invalidateQueries({ queryKey: ["companies"] })
+          handleRefresh() // Refresh data after workspace creation
         },
         onError: (err) => {
           console.error("Error creating workspace:", err)
@@ -106,6 +110,7 @@ const Sidebar: React.FC = () => {
           handleAddWorkspaceClick={handleAddWorkspaceClick}
           companies={companies}
           isLoadingCompanies={isLoadingCompanies}
+          onRefresh={handleRefresh} // Pass refresh handler to SidebarNav
         />
       </aside>
 
@@ -127,10 +132,6 @@ const Sidebar: React.FC = () => {
           onClose={() => setModalOpen(false)}
           isPending={false}
           label="Save"
-          selectedCompanyId={selectedCompanyId}
-          error={null}
-          roles={[]} // Pass roles if applicable
-          permissions={[]} // Pass permissions if applicable
         />
       )}
     </>
