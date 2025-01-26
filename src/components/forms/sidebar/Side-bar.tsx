@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { cn } from "@/lib/utils"
 import SidebarHeader from "@/components/forms/sidebar/SidebarHeader"
 import SidebarNav from "@/components/forms/sidebar/SidebarNav"
@@ -6,22 +6,43 @@ import ModalForm from "@/components/forms/common/modal-form"
 import { useUser } from "@/context/user-context"
 import { useCompanyMutations } from "@/hooks/useCompanyMutations"
 import { useWorkspaceMutations } from "@/hooks/useWorkspaceMutations"
-import { CompanyData, WorkspaceData } from "@/types/interfaces"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { getMyCompanies } from "@/api/company"
+import { CompanyData, WorkspaceData } from "@/types/interfaces"
+
+async function fetchCompanies(): Promise<CompanyData[]> {
+  const response = await getMyCompanies()
+  return response
+}
 
 const Sidebar: React.FC = () => {
   const { open } = useSidebar()
-  const [isModalOpen, setModalOpen] = React.useState(false)
-  const [modalType, setModalType] = React.useState<"company" | "workspace" | null>(null)
-  const [selectedCompanyId, setSelectedCompanyId] = React.useState<string | null>(null)
+  const [isModalOpen, setModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<"company" | "workspace" | null>(null)
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
   const { userUUID } = useUser()
   const { createCompanyMutation } = useCompanyMutations()
   const { createWorkspaceMutation } = useWorkspaceMutations()
   const queryClient = useQueryClient()
+
+  // Fetch companies data
+  const { data: companies = [], isLoading: isLoadingCompanies } = useQuery({
+    queryKey: ["companies"],
+    queryFn: fetchCompanies,
+    onError: (err) => {
+      console.error("Error fetching companies:", err)
+    }
+  })
+
+  // Refresh companies and workspaces
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["companies"] }) // Refresh companies
+    queryClient.invalidateQueries({ queryKey: ["workspaces"] }) // Refresh workspaces
+  }
 
   const handleAddCompanyClick = () => {
     setModalType("company")
@@ -44,20 +65,20 @@ const Sidebar: React.FC = () => {
       createCompanyMutation.mutate(data as CompanyData, {
         onSuccess: () => {
           setModalOpen(false)
-          queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+          handleRefresh() // Refresh data after company creation
         },
-        onError: () => {
-          // Handle error
+        onError: (err) => {
+          console.error("Error creating company:", err)
         }
       })
     } else if (modalType === "workspace") {
       createWorkspaceMutation.mutate(data as WorkspaceData, {
         onSuccess: () => {
           setModalOpen(false)
-          queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+          handleRefresh() // Refresh data after workspace creation
         },
-        onError: () => {
-          // Handle error
+        onError: (err) => {
+          console.error("Error creating workspace:", err)
         }
       })
     }
@@ -85,7 +106,12 @@ const Sidebar: React.FC = () => {
             </Tooltip>
           </TooltipProvider>
         </div>
-        <SidebarNav handleAddWorkspaceClick={handleAddWorkspaceClick} />
+        <SidebarNav
+          handleAddWorkspaceClick={handleAddWorkspaceClick}
+          companies={companies}
+          isLoadingCompanies={isLoadingCompanies}
+          onRefresh={handleRefresh} // Pass refresh handler to SidebarNav
+        />
       </aside>
 
       {isModalOpen && (
@@ -106,7 +132,6 @@ const Sidebar: React.FC = () => {
           onClose={() => setModalOpen(false)}
           isPending={false}
           label="Save"
-          selectedCompanyId={selectedCompanyId}
         />
       )}
     </>

@@ -1,7 +1,11 @@
-import React, { useState } from "react"
+import type React from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Task } from "@/types/interfaces"
+import { UserSearch } from "@/components/forms/taskboard/UserSearch"
+import type { Task } from "@/types/interfaces"
+import { formatDate } from "@/utils/format-date"
+import { useUser } from "@/context/user-context"
 
 interface TaskFormProps {
   formData: Task
@@ -12,6 +16,14 @@ interface TaskFormProps {
 
 const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPending }) => {
   const [localFormData, setLocalFormData] = useState<Task>(formData)
+  const { userUUID } = useUser()
+
+  useEffect(() => {
+    setLocalFormData((prev) => ({
+      ...formData,
+      createdUserId: formData.createdUserId || userUUID || prev.createdUserId || ""
+    }))
+  }, [formData, userUUID])
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -20,12 +32,34 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
     setLocalFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleAttachmentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
     setLocalFormData((prev) => ({
       ...prev,
-      attachments: value ? value.split(",").map((a) => a.trim()) : []
+      [name]: value ? formatDate(value) : undefined
     }))
+  }
+
+  const handleAttachmentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const attachments = value ? value.split(",").map((a) => a.trim()) : []
+    setLocalFormData((prev) => ({
+      ...prev,
+      attachments: attachments
+    }))
+  }
+
+  const handleUserSelect = (userId: string, userName: string) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      assignedUserId: userId
+    }))
+  }
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onCancel()
   }
 
   return (
@@ -82,13 +116,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
         </select>
       </div>
       <div className="space-y-2">
-        <label htmlFor="assignedUserId">Assigned User</label>
-        <Input
-          id="assignedUserId"
-          name="assignedUserId"
-          value={localFormData.assignedUserId}
-          onChange={handleInputChange}
-          placeholder="Assigned User ID"
+        <label htmlFor="assignedUser">Assigned User</label>
+        <UserSearch
+          initialUserId={localFormData.assignedUserId}
+          initialUserName={localFormData.assignedUserName}
+          onUserSelect={(userId, userName) => {
+            handleUserSelect(userId, userName)
+          }}
         />
       </div>
       <div className="space-y-2">
@@ -98,7 +132,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
           name="dueDate"
           type="date"
           value={localFormData.dueDate || ""}
-          onChange={handleInputChange}
+          onChange={handleDateChange}
           placeholder="Due Date"
         />
       </div>
@@ -109,7 +143,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
           name="resolvedDate"
           type="date"
           value={localFormData.resolvedDate || ""}
-          onChange={handleInputChange}
+          onChange={handleDateChange}
           placeholder="Resolved Date"
         />
       </div>
@@ -123,11 +157,25 @@ const TaskForm: React.FC<TaskFormProps> = ({ formData, onSave, onCancel, isPendi
           placeholder="Comma-separated attachment URLs"
         />
       </div>
+      <input
+        type="hidden"
+        name="createdUserId"
+        value={localFormData.createdUserId || userUUID || ""}
+      />
       <div className="flex justify-between items-center mt-4">
-        <Button variant="outline" disabled={isPending} onClick={onCancel}>
+        <Button variant="outline" disabled={isPending} onClick={handleCancel}>
           Cancel
         </Button>
-        <Button variant="secondary" disabled={isPending} onClick={() => onSave(localFormData)}>
+        <Button
+          variant="secondary"
+          disabled={isPending}
+          onClick={() =>
+            onSave({
+              ...localFormData,
+              createdUserId: userUUID || ""
+            })
+          }
+        >
           {isPending ? "Saving..." : formData.id ? "Update" : "Create"}
         </Button>
       </div>

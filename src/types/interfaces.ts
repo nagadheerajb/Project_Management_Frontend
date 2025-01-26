@@ -75,3 +75,62 @@ export interface TaskResponse {
   code: number
   errors: any[]
 }
+
+// Interfaces for request and response data
+export interface Comment {
+  id?: string
+  taskId: string
+  content: string
+  createdBy: string
+  createdDate?: string
+}
+
+export interface PaginatedResponse<T> {
+  content: T[]
+  pageable: {
+    pageNumber: number
+    pageSize: number
+    offset: number
+    paged: boolean
+    unpaged: boolean
+  }
+  totalElements: number
+  totalPages: number
+  last: boolean
+  first: boolean
+  sort: {
+    empty: boolean
+    sorted: boolean
+    unsorted: boolean
+  }
+  numberOfElements: number
+  size: number
+  number: number
+  empty: boolean
+}
+
+// Role Interface
+export interface Role {
+  id?: string
+  name: string
+  companyId: string
+  createdDate?: string
+  created_user?: string
+}
+
+// Permission Interface
+export interface Permission {
+  id?: string
+  name: string
+  permissionUrl: string
+  permissionType: "GET" | "POST" | "PUT" | "DELETE"
+  created_user?: string
+}
+
+// RolePermission Interface
+export interface RolePermission {
+  id?: string
+  roleId: string
+  permissionId: string
+  created_user?: string
+}

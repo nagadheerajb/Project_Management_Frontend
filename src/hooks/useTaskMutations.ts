@@ -10,10 +10,13 @@ export const useTaskMutations = () => {
     mutationFn: createTask,
     onSuccess: (data) => {
       console.log("Task created successfully:", data)
-      queryClient.invalidateQueries({ queryKey: ["tasks"] }) // Refetch tasks after creation
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
     onError: (error: Error) => {
-      console.error("Error creating task:", error.message)
+      console.error("Error creating task:", error)
+      if (error.message) {
+        console.error("Server response:", error.message)
+      }
     }
   })
 
@@ -23,13 +26,19 @@ export const useTaskMutations = () => {
     Error,
     { id: string; updates: Partial<Task> }
   >({
-    mutationFn: ({ id, updates }) => updateTask(id, updates),
+    mutationFn: ({ id, updates }) => {
+      console.log("Updating task with id:", id, "Updates:", updates)
+      return updateTask(id, updates)
+    },
     onSuccess: (data) => {
       console.log("Task updated successfully:", data)
-      queryClient.invalidateQueries({ queryKey: ["tasks"] }) // Refetch tasks after update
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
     onError: (error: Error) => {
-      console.error("Error updating task:", error.message)
+      console.error("Error updating task:", error)
+      if (error.message) {
+        console.error("Server response:", error.message)
+      }
     }
   })
 
@@ -38,10 +47,13 @@ export const useTaskMutations = () => {
     mutationFn: deleteTask,
     onSuccess: () => {
       console.log("Task deleted successfully")
-      queryClient.invalidateQueries({ queryKey: ["tasks"] }) // Refetch tasks after deletion
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
     },
     onError: (error: Error) => {
-      console.error("Error deleting task:", error.message)
+      console.error("Error deleting task:", error)
+      if (error.message) {
+        console.error("Server response:", error.message)
+      }
     }
   })
 

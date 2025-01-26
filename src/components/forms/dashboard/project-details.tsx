@@ -1,8 +1,16 @@
 import React from "react"
-import EditButton from "@/components/forms/dashboard/EditButton"
-import DeleteButton from "@/components/forms/dashboard/DeleteButton"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem
+} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, Clock, User, AlertCircle, MoreVertical } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { formatDate } from "@/utils/format-date"
 
 const ProjectDetails: React.FC<{
   project: any
@@ -12,44 +20,68 @@ const ProjectDetails: React.FC<{
   const navigate = useNavigate()
 
   const handleViewTasks = () => {
+    if (!project.id || !project.workspaceId) {
+      console.error("No Project ID or Workspace ID provided. Cannot navigate to taskboards.")
+      alert(
+        "No Project ID or Workspace ID provided. Please navigate from the project details page."
+      )
+      return
+    }
     navigate("/taskboards", {
       state: { projectId: project.id, workspaceId: project.workspaceId }
     })
   }
 
+  const displayName = `${project.firstName || ""} ${project.lastName || ""}`.trim() || "N/A"
+
   return (
-    <div>
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-semibold">Project Details</h3>
-        <div className="space-x-2 flex">
-          <EditButton onClick={onEdit} />
-          <DeleteButton onClick={() => onDelete(project.id)} id={project.id} />
-          <Button onClick={handleViewTasks} variant="default" size="sm">
-            View Tasks
-          </Button>
+    <Card className="w-full shadow-md border border-gray-200">
+      <CardHeader className="flex flex-row justify-between items-start pb-4">
+        <div className="flex flex-col space-y-2">
+          <CardTitle className="text-xl font-bold">{project.name}</CardTitle>
+          <Badge variant={project.status ? "default" : "secondary"}>
+            {project.status ? "Active" : "Inactive"}
+          </Badge>
         </div>
-      </div>
-      <div className="p-4 border rounded-md">
-        <h4 className="text-xl font-semibold">{project.name}</h4>
-        <p>{project.description}</p>
-        <p>
-          <strong>Created Date:</strong> {new Date(project.createdDate).toLocaleString()}
-        </p>
-        <p>
-          <strong>Start Date:</strong> {new Date(project.startDate).toLocaleDateString()}
-        </p>
-        <p>
-          <strong>End Date:</strong>{" "}
-          {project.endDate ? new Date(project.endDate).toLocaleDateString() : "N/A"}
-        </p>
-        <p>
-          <strong>Created By:</strong> {project.createdByUserId}
-        </p>
-        <p>
-          <strong>Status:</strong> {project.status ? "Active" : "Inactive"}
-        </p>
-      </div>
-    </div>
+        <div className="flex items-center space-x-2">
+          <Button onClick={handleViewTasks}>View Tasks</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onEdit}>Edit Project</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDelete(project.id)}>
+                Delete Project
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>Start Date: {formatDate(project.startDate)}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span>End Date: {project.endDate ? formatDate(project.endDate) : "N/A"}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span>Created By: {displayName}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <span>Description: {project.description || "No description provided"}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

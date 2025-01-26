@@ -1,41 +1,46 @@
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useWorkspace, useCompany } from "@/context/workspace-context"
+import { useWorkspace } from "@/context/workspace-context"
 import api from "@/api"
-import { Workspace } from "@/types/interfaces"
+import { Workspace, CompanyData } from "@/types/interfaces"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 import { ChevronsUpDown, Plus } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { useSidebar } from "@/components/ui/sidebar"
-import { useNavigate } from "react-router-dom" // Add this import
+import { useNavigate } from "react-router-dom"
 
 async function fetchWorkspaces(): Promise<Workspace[]> {
   const response = await api.get("/workspace-users/my-workspaces")
   return response.data.data
 }
 
-const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => void }> = ({
-  handleAddWorkspaceClick
-}) => {
-  const { selectedWorkspace, setSelectedWorkspace, selectedType, setSelectedType } = useWorkspace()
-  const { selectedCompany, setSelectedCompany } = useCompany()
+const SidebarNav: React.FC<{
+  handleAddWorkspaceClick: (companyId: string) => void
+  companies: CompanyData[]
+  isLoadingCompanies: boolean
+  onRefresh: () => void
+}> = ({ handleAddWorkspaceClick, companies, isLoadingCompanies, onRefresh }) => {
+  const {
+    selectedWorkspace,
+    setSelectedWorkspace,
+    selectedType,
+    setSelectedType,
+    selectedCompany,
+    setSelectedCompany
+  } = useWorkspace()
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({})
   const { open } = useSidebar()
-  const navigate = useNavigate() // Initialize navigation
-
-  const toggleSection = (companyId: string) => {
-    setOpenSections((prev) => ({ ...prev, [companyId]: !prev[companyId] }))
-  }
+  const navigate = useNavigate()
 
   const {
     data: workspaces,
     isLoading,
     error
-  } = useQuery<Workspace[]>({
+  } = useQuery({
     queryKey: ["workspaces"],
     queryFn: fetchWorkspaces
   })
@@ -45,15 +50,16 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
     setSelectedCompany(workspace.companyId)
     setSelectedType("workspace")
     localStorage.setItem("workspaceId", workspace.workspaceId)
-    navigate("/dashboard") // Navigate to the workspace dashboard
+    onRefresh()
+    navigate("/dashboard")
   }
 
   const handleCompanyClick = (companyId: string) => {
     setSelectedCompany(companyId)
-    setSelectedWorkspace("")
+    setSelectedWorkspace(null)
     setSelectedType("company")
-    toggleSection(companyId)
-    navigate("/dashboard") // Navigate to the company dashboard
+    setOpenSections((prev) => ({ ...prev, [companyId]: !prev[companyId] }))
+    navigate("/dashboard")
   }
 
   const groupedWorkspaces = workspaces?.reduce((acc, workspace) => {
@@ -71,6 +77,7 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
   return (
     <ScrollArea className="h-[calc(100vh-8rem)] py-2">
       <nav className="space-y-1 px-2">
+        {/* Skeleton Loader */}
         {isLoading &&
           Array(3)
             .fill(0)
@@ -80,12 +87,16 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
                 <Skeleton className="h-4 w-24" />
               </div>
             ))}
+
+        {/* Error Message */}
         {error && (
           <div className="p-4 text-sm text-destructive">
             <p>Failed to load workspaces</p>
             <pre>{error.message}</pre>
           </div>
         )}
+
+        {/* Companies with Workspaces */}
         {groupedWorkspaces &&
           Object.entries(groupedWorkspaces).map(([companyId, { companyName, workspaces }]) => (
             <Collapsible key={companyId} open={openSections[companyId]} className="space-y-1">
@@ -94,7 +105,7 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
                   <Button
                     variant={selectedCompany === companyId ? "secondary" : "ghost"}
                     className="w-full justify-start px-2"
-                    onClick={() => handleCompanyClick(companyId)} // Trigger navigation
+                    onClick={() => handleCompanyClick(companyId)}
                   >
                     <ChevronsUpDown className="h-4 w-4 mr-2" />
                     {open && <span className="truncate">{companyName}</span>}
@@ -121,7 +132,7 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
                     key={workspace.workspaceId}
                     variant={selectedWorkspace === workspace.workspaceId ? "secondary" : "ghost"}
                     className="w-full justify-start pl-6"
-                    onClick={() => handleWorkspaceClick(workspace)} // Trigger navigation
+                    onClick={() => handleWorkspaceClick(workspace)}
                   >
                     <Avatar className="h-6 w-6 mr-2">
                       <AvatarFallback style={{ backgroundColor: workspace.color }}>
@@ -139,6 +150,36 @@ const SidebarNav: React.FC<{ handleAddWorkspaceClick: (companyId: string) => voi
                 ))}
               </CollapsibleContent>
             </Collapsible>
+          ))}
+
+        {/* Companies Without Workspaces */}
+        <h3 className="text-muted-foreground mt-4 px-2">Companies Without Workspaces</h3>
+        {companies
+          .filter((company) => !groupedWorkspaces?.[company.id])
+          .map((company) => (
+            <div key={company.id} className="flex items-center justify-between">
+              <Button
+                variant={selectedCompany === company.id ? "secondary" : "ghost"}
+                className="w-full justify-start px-2"
+                onClick={() => handleCompanyClick(company.id)}
+              >
+                {company.name}
+              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleAddWorkspaceClick(company.id)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Create new workspace</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           ))}
       </nav>
     </ScrollArea>

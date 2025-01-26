@@ -1,41 +1,65 @@
 import React from "react"
-import DetailsCard from "@/components/forms/dashboard/DetailsCard"
-import EditButton from "@/components/forms/dashboard/EditButton"
-import DeleteButton from "@/components/forms/dashboard/DeleteButton"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import { MoreVertical } from "lucide-react"
+import { formatDate } from "@/utils/format-date" // Import formatDate
 
 const WorkspaceDetails: React.FC<{
   workspaceDetails: any
   onEdit: () => void
   onDelete: (id: string) => void
 }> = ({ workspaceDetails, onEdit, onDelete }) => {
-  console.log("WorkspaceDetails - workspaceDetails:", workspaceDetails)
+  const displayName =
+    `${workspaceDetails.firstName || ""} ${workspaceDetails.lastName || ""}`.trim() || "N/A"
 
   return (
-    <div>
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold">{workspaceDetails?.name}</h2>
-        <div className="space-x-2">
-          <EditButton onClick={onEdit} />
-          {workspaceDetails?.id &&
-          typeof workspaceDetails.id === "string" &&
-          workspaceDetails.id.match(/^[0-9a-fA-F-]{36}$/) ? (
-            <DeleteButton
-              id={workspaceDetails.id} // Pass the ID explicitly
-              onClick={() => {
-                console.log("DeleteButton clicked with ID:", workspaceDetails.id)
-                onDelete(workspaceDetails.id)
-              }}
-            />
-          ) : (
-            <p className="text-red-500">Invalid Workspace ID</p>
-          )}
+    <Card className="w-full shadow-md border border-gray-200">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-xl font-bold">{workspaceDetails?.name}</CardTitle>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+                <span className="sr-only">More options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onEdit}>Edit Workspace</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDelete(workspaceDetails?.id)}>
+                Delete Workspace
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <DetailsCard title="Workspace" details={workspaceDetails} />
-        {/* Add more cards for other workspace-related information */}
-      </div>
-    </div>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex items-center space-x-2">
+          <span className="font-medium text-gray-600">Description:</span>
+          <span>{workspaceDetails.description || "N/A"}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="font-medium text-gray-600">Type:</span>
+          <span className="px-2 py-1 text-sm bg-gray-100 text-gray-600 rounded">
+            {workspaceDetails.type || "N/A"}
+          </span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="font-medium text-gray-600">Created Date:</span>
+          <span>{formatDate(workspaceDetails.createdDate) || "N/A"}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="font-medium text-gray-600">Created By:</span>
+          <span>{displayName}</span>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
