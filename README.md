@@ -2,6 +2,8 @@
 
 This is a React-based frontend project designed with modern tools and frameworks. The application incorporates various features like authentication, task management, real-time notifications, permission handling, and more, making it suitable for scalable and complex web applications.
 
+Refer to the [Backend Link](https://github.com/nagadheerajb/Project_Management_Backend)
+
 ---
 
 ## Table of Contents
